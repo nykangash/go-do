@@ -4,11 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Go-do Board</title>
+
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"></noscript>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+
     <style>
+        /* --- Performance Note: For production, extract this CSS to a .css file and minify it. --- */
+
         /* --- Global & Dark Mode --- */
         body { font-family: 'Inter', sans-serif; background-color: #1f2a44; color: #e2e8f0; overscroll-behavior-x: none; transition: background-color 0.3s, color 0.3s; }
         .board-container { display: flex; overflow-x: auto; padding: 20px; gap: 16px; min-height: calc(100vh - 150px); align-items: flex-start; }
@@ -29,8 +41,7 @@
         .subtask-item input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 50%; left: 50%; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: translate(-50%, -60%) rotate(45deg); display: block; }
         .subtask-item span { flex-grow: 1; color: #cbd5e1; font-family: 'Roboto', sans-serif; font-size: 0.85rem; line-height: 1.3; transition: color 0.2s, text-decoration 0.2s; }
         .subtask-item span.completed { text-decoration: line-through; color: #9ca3af; }
-        /* --- Updated: Subtask Buttons --- */
-        .subtask-controls { display: flex; gap: 4px; }
+        .subtask-controls { display: flex; gap: 4px; margin-left: auto; } /* Added margin-left: auto */
         .subtask-btn { color: #9ca3af; background: none; border: none; cursor: pointer; padding: 4px; line-height: 1; font-size: 0.9rem; border-radius: 3px; }
         .subtask-btn:hover { color: #e2e8f0; background-color: #4b5563; }
         .subtask-btn.delete:hover { color: #f87171; background-color: #7f1d1d; }
@@ -56,26 +67,23 @@
         .board-container::-webkit-scrollbar-thumb, .task-list::-webkit-scrollbar-thumb, .column::-webkit-scrollbar-thumb { background-color: #6b7280; border-radius: 4px; }
         .board-container::-webkit-scrollbar-track, .task-list::-webkit-scrollbar-track, .column::-webkit-scrollbar-track { background-color: #2d3748; }
         input:focus, button:focus-visible { outline: 2px solid #60a5fa !important; outline-offset: 1px; }
-        /* --- Sidebar --- */
         #sidebar { background-color: #111827; transition: transform 0.3s ease-in-out; }
         #sidebarOverlay { transition: opacity 0.3s ease-in-out; }
         #sidebarOverlay.hidden { display: none; opacity: 0; }
         .sidebar-board-item { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 10px 15px; border-radius: 6px; transition: background-color 0.2s; }
         .sidebar-board-item:hover { background-color: #374151; }
         .sidebar-board-item.active { background-color: #2563eb; font-weight: bold; }
-        .sidebar-board-item span { flex-grow: 1; margin-left: 12px; } /* Add margin for spacing */
+        .sidebar-board-item span { flex-grow: 1; margin-left: 12px; }
         .sidebar-board-item i { width: 16px; text-align: center; }
         .sidebar-board-delete-btn { background: none; border: none; color: #9ca3af; cursor: pointer; padding: 4px; border-radius: 4px; font-size: 0.9rem; flex-shrink: 0; }
-        .sidebar-board-delete-btn:hover { color: #f87171; background-color: #581c874d; } /* Added subtle bg on hover */
+        .sidebar-board-delete-btn:hover { color: #f87171; background-color: #581c874d; }
         #completedTasksBtn { display: block; width: 100%; text-align: left; padding: 10px 15px; border-radius: 6px; transition: background-color 0.2s; display: flex; align-items: center; gap: 12px; }
         #completedTasksBtn:hover { background-color: #374151; }
-        /* --- Theme Toggle --- */
         #themeToggleBtn #themeToggleIndicator { transition: transform 0.2s ease-in-out; }
         #themeToggleBtn.dark #themeToggleIndicator { transform: translateX(1.25rem); }
         #themeToggleBtn.dark { background-color: #3b82f6; }
         #themeToggleBtn:not(.dark) { background-color: #cbd5e1; }
         #themeToggleBtn i { pointer-events: none; }
-        /* --- Menus --- */
         .menu-base { position: absolute; z-index: 1000; background-color: #2d3748; border: 1px solid #4b5563; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); padding: 8px; display: none; flex-direction: column; gap: 4px; width: 200px; }
         .menu-item { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: background-color 0.2s; color: #e2e8f0; font-size: 0.9rem; gap: 10px; }
         .menu-item:hover { background-color: #374151; }
@@ -85,9 +93,8 @@
         hr.menu-divider { border-top: 1px solid #4b5563; margin: 4px 0; }
         .context-menu-color-swatch { width: 16px; height: 16px; border-radius: 50%; margin-right: 0px; border: 1px solid #6b7280; }
         .submenu { position: relative; }
-        .submenu-content { position: absolute; left: 100%; top: -8px; /* Adjust as needed */ display: none; }
+        .submenu-content { position: absolute; left: 100%; top: -8px; display: none; }
         .submenu:hover .submenu-content { display: flex; }
-        /* --- Light Mode --- */
         body.light-mode { background-color: #f9fafb; color: #111827; }
         body.light-mode .column { background-color: #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         body.light-mode .column-header { border-bottom-color: #d1d5db; }
@@ -109,7 +116,7 @@
         body.light-mode #sidebar .sidebar-board-item:hover { background-color: #f3f4f6; }
         body.light-mode #completedTasksBtn:hover { background-color: #f3f4f6; }
         body.light-mode #sidebar .sidebar-board-item.active { background-color: #3b82f6; color: white; }
-        body.light-mode #sidebar .sidebar-board-item.active i { color: #e0e7ff; } /* Lighter icon on active */
+        body.light-mode #sidebar .sidebar-board-item.active i { color: #e0e7ff; }
         body.light-mode #sidebar .sidebar-board-delete-btn { color: #6b7280; }
         body.light-mode #sidebar .sidebar-board-delete-btn:hover { color: #ef4444; background-color: #fee2e2; }
         body.light-mode #themeToggleBtn { background-color: #e5e7eb; }
@@ -123,7 +130,6 @@
         body.light-mode .subtask-item span.completed { color: #6b7280; }
         body.light-mode .subtask-item input[type="checkbox"]:checked::after { border-color: #1f2a44; }
         body.light-mode .subtask-item input[type="checkbox"] { border-color: #3b82f6; }
-
     </style>
 </head>
 <body class="text-gray-200">
@@ -209,7 +215,7 @@
         const DEFAULT_COLUMN_COLOR = COLUMN_COLORS[0];
 
         // --- IndexedDB Setup ---
-        const DB_NAME = 'GoDoDB_v4'; // Incremented
+        const DB_NAME = 'GoDoDB_v4';
         const DB_VERSION = 1;
         const STORE_NAME = 'appState';
         let db;
@@ -236,42 +242,41 @@
         completedTasksBtn.addEventListener('click', () => alert('Completed tasks archive coming soon!'));
 
 
-        // --- Board Rendering ---
+        // --- Board Rendering (Optimized with DocumentFragment) ---
         function renderBoardList() {
             sidebarBoardList.innerHTML = '';
+            const fragment = document.createDocumentFragment(); // Use fragment
             if (appState.boards.length === 0) { sidebarBoardList.innerHTML = '<p class="px-4 py-2 text-gray-400">No boards yet...</p>'; return; }
             appState.boards.forEach(board => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'sidebar-board-item';
                 if (board.id === appState.currentBoardId) itemDiv.classList.add('active');
-
                 const boardBtn = document.createElement('button');
                 boardBtn.innerHTML = `<i class="fas fa-clipboard-list text-gray-400"></i><span>${board.title}</span>`;
                 boardBtn.className = 'flex items-center gap-3 flex-grow';
                 boardBtn.addEventListener('click', () => { switchBoard(board.id); closeSidebar(); });
-
                 const deleteBtn = document.createElement('button');
                 deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 deleteBtn.className = 'sidebar-board-delete-btn';
                 deleteBtn.title = `Delete board: ${board.title}`;
-                deleteBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    confirmDeleteBoard(board.id, board.title);
-                });
-
+                deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmDeleteBoard(board.id, board.title); });
                 itemDiv.appendChild(boardBtn);
                 itemDiv.appendChild(deleteBtn);
-                sidebarBoardList.appendChild(itemDiv);
+                fragment.appendChild(itemDiv); // Append to fragment
             });
+            sidebarBoardList.appendChild(fragment); // Append fragment once
         }
 
         function renderBoard() {
             boardContainer.innerHTML = '';
             const currentBoard = getCurrentBoard();
             const isLight = body.classList.contains('light-mode');
+            const fragment = document.createDocumentFragment(); // Use fragment
+
             if (!currentBoard) { boardContainer.innerHTML = '<p class="text-center text-xl p-10">No board selected.</p>'; currentBoardNameHeader.textContent = 'Go-do'; addColumnBtnGlobal.style.display = 'none'; renderBoardList(); saveAppState(); return; }
             currentBoardNameHeader.textContent = currentBoard.title;
             addColumnBtnGlobal.style.display = 'block';
+
             currentBoard.columns.forEach(colData => {
                 const colEl = createColumnElement(colData);
                 if (colData.width) colEl.style.width = `${colData.width}px`;
@@ -282,8 +287,10 @@
                 colEl.querySelector('.column-title').style.color = headerColor;
                 colEl.querySelector('.column-menu-btn').style.color = headerColor;
                 colEl.querySelector('.column-header').style.borderBottomColor = headerColor === '#f3f4f6' ? '#4b5563' : '#d1d5db';
-                boardContainer.appendChild(colEl);
+                fragment.appendChild(colEl); // Append to fragment
             });
+
+            boardContainer.appendChild(fragment); // Append fragment once
             renderBoardList();
             saveAppState();
         }
@@ -292,19 +299,10 @@
         function addNewBoard() { const t = prompt("New board name:", "My Board"); if (t && t.trim()) { const b = { id: `board-${appState.nextBoardId++}`, title: t.trim(), columns: [{ id: `col-${appState.nextColumnId++}`, title: 'To Do', tasks: [], width: 300, color: DEFAULT_COLUMN_COLOR.value }] }; appState.boards.push(b); switchBoard(b.id); } }
         function switchBoard(id) { appState.currentBoardId = id; renderBoard(); }
         addBoardBtnGlobal.addEventListener('click', addNewBoard);
-
-        function confirmDeleteBoard(boardId, boardTitle) {
-            if (confirm(`Are you sure you want to delete the board "${boardTitle}"? This cannot be undone.`)) {
-                appState.boards = appState.boards.filter(b => b.id !== boardId);
-                if (appState.currentBoardId === boardId) {
-                    appState.currentBoardId = appState.boards.length > 0 ? appState.boards[0].id : null;
-                }
-                renderBoard();
-            }
-        }
+        function confirmDeleteBoard(boardId, boardTitle) { if (confirm(`Are you sure you want to delete the board "${boardTitle}"? This cannot be undone.`)) { appState.boards = appState.boards.filter(b => b.id !== boardId); if (appState.currentBoardId === boardId) { appState.currentBoardId = appState.boards.length > 0 ? appState.boards[0].id : null; } renderBoard(); } }
 
 
-        // --- Column Management ---
+        // --- Column Management (Optimized with DocumentFragment) ---
         function createColumnElement(cData) {
             const div = document.createElement('div'); div.className = 'column'; div.dataset.columnId = cData.id; div.draggable = true;
             div.addEventListener('dragstart', handleColumnDragStart); div.addEventListener('dragend', handleColumnDragEnd);
@@ -317,7 +315,11 @@
             const l = document.createElement('div'); l.className = 'task-list';
             l.addEventListener('dragover', handleDragOver); l.addEventListener('drop', e => handleTaskDrop(e, cData.id));
             l.addEventListener('dragenter', handleTaskDragEnterColumn); l.addEventListener('dragleave', handleTaskDragLeaveColumn);
-            cData.tasks.forEach(tData => l.appendChild(createTaskElement(tData, cData.id)));
+
+            const taskFragment = document.createDocumentFragment(); // Fragment for tasks
+            cData.tasks.forEach(tData => taskFragment.appendChild(createTaskElement(tData, cData.id)));
+            l.appendChild(taskFragment); // Append tasks once
+
             const a = document.createElement('div'); a.className = 'add-card-area';
             const i = document.createElement('input'); i.type = 'text'; i.className = 'new-task-input'; i.placeholder = 'Add a card...';
             i.addEventListener('keypress', e => { if (e.key === 'Enter' && i.value.trim()) { addTaskToColumn(cData.id, i.value.trim()); i.value = ''; } });
@@ -334,9 +336,10 @@
         function deleteColumn(id) { const b = getCurrentBoard(); if (b) { b.columns = b.columns.filter(c => c.id !== id); renderBoard(); } }
         function updateColumnColor(id, color) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (c) { c.color = color; renderBoard(); } }
         function sortColumn(id, type) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (!c) return; if (type === 'name-az') c.tasks.sort((a, b) => a.text.localeCompare(b.text)); else if (type === 'date-new') c.tasks.sort((a, b) => b.createdAt - a.createdAt); renderBoard(); }
-        function clearCompleted(id) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (!c) return; c.tasks = c.tasks.filter(t => t.subTasks.length === 0 || t.subTasks.some(st => !st.completed)); renderBoard(); }
+        function clearCompleted(id) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (!c) return; c.tasks = c.tasks.filter(t => !t.subTasks.every(st => st.completed)); renderBoard(); }
 
-        // --- Task Management ---
+
+        // --- Task Management (Optimized with DocumentFragment) ---
         function createTaskElement(tData, cId) {
             const div = document.createElement('div'); div.className = 'task-item'; div.dataset.taskId = tData.id; div.dataset.columnId = cId; div.draggable = true; div.style.backgroundColor = tData.color || DEFAULT_TASK_COLOR;
             div.addEventListener('contextmenu', e => { e.preventDefault(); hideAllMenus(); currentContextMenuTask = { columnId: cId, taskId: tData.id }; populateAndShowContextMenu(e.clientX, e.clientY, tData); });
@@ -354,10 +357,13 @@
             subBtn.addEventListener('click', e => { e.stopPropagation(); addAction(); });
             subForm.appendChild(subInput); subForm.appendChild(subBtn);
             const subList = document.createElement('div'); subList.className = 'subtask-list-container'; subList.style.display = 'none';
+
             if (tData.subTasks && tData.subTasks.length > 0) {
-                 tData.subTasks.forEach(st => subList.appendChild(createSubTaskElement(st, tData.id, cId, tData.color || DEFAULT_TASK_COLOR)));
+                 const subTaskFragment = document.createDocumentFragment(); // Fragment for subtasks
+                 tData.subTasks.forEach(st => subTaskFragment.appendChild(createSubTaskElement(st, tData.id, cId, tData.color || DEFAULT_TASK_COLOR)));
+                 subList.appendChild(subTaskFragment); // Append subtasks once
+                 subList.style.display = 'flex'; // Show if subtasks exist
             }
-            if (tData.subTasks?.length > 0) subList.style.display = 'flex';
 
             div.appendChild(subForm); div.appendChild(subList);
             div.addEventListener('dragstart', handleTaskDragStart); div.addEventListener('dragend', handleTaskDragEnd);
@@ -368,103 +374,43 @@
         function updateTaskColor(cId, tId, color) { const t = getTaskById(cId, tId); if (t) { t.color = color; renderBoard(); } }
         function toggleStarTask(cId, tId) { const t = getTaskById(cId, tId); if (t) { t.isStarred = !t.isStarred; renderBoard(); } }
         function duplicateTask(columnId, taskId) {
-            const board = getCurrentBoard();
-            if (!board) return;
-            const column = board.columns.find(col => col.id === columnId);
-            if (!column) return;
-            const taskIndex = column.tasks.findIndex(t => t.id === taskId);
-            if (taskIndex === -1) return;
-
+            const board = getCurrentBoard(); if (!board) return; const column = board.columns.find(col => col.id === columnId); if (!column) return;
+            const taskIndex = column.tasks.findIndex(t => t.id === taskId); if (taskIndex === -1) return;
             const originalTask = column.tasks[taskIndex];
-            const newTask = {
-                id: `task-${appState.nextTaskId++}`,
-                text: `${originalTask.text} (Copy)`,
-                color: originalTask.color,
-                isStarred: originalTask.isStarred,
-                createdAt: Date.now(),
-                subTasks: originalTask.subTasks.map(st => ({
-                    id: `subtask-${appState.nextSubTaskId++}`,
-                    text: st.text,
-                    completed: st.completed
-                }))
-            };
-
-            column.tasks.splice(taskIndex + 1, 0, newTask);
-            renderBoard();
+            const newTask = { id: `task-${appState.nextTaskId++}`, text: `${originalTask.text}`, color: originalTask.color, isStarred: originalTask.isStarred, createdAt: Date.now(), subTasks: originalTask.subTasks.map(st => ({ id: `subtask-${appState.nextSubTaskId++}`, text: st.text, completed: st.completed })) };
+            column.tasks.splice(taskIndex + 1, 0, newTask); renderBoard();
         }
 
         // --- Sub-task Management ---
-        function toggleSubtaskVisibility(cId, tId) {
-            const el = document.querySelector(`.task-item[data-task-id="${tId}"]`); if (!el) return;
-            const f = el.querySelector('.add-subtask-form'); const l = el.querySelector('.subtask-list-container'); if (!f || !l) return;
-            const hidden = f.style.display === 'none';
-            f.style.display = hidden ? 'flex' : 'none';
-            l.style.display = hidden ? 'flex' : 'none';
-            if(hidden) f.querySelector('input').focus();
-        }
-        // --- UPDATED: createSubTaskElement to add Duplicate Button ---
+        function toggleSubtaskVisibility(cId, tId) { const el = document.querySelector(`.task-item[data-task-id="${tId}"]`); if (!el) return; const f = el.querySelector('.add-subtask-form'); const l = el.querySelector('.subtask-list-container'); if (!f || !l) return; const hidden = f.style.display === 'none'; f.style.display = hidden ? 'flex' : 'none'; l.style.display = hidden || l.children.length > 0 ? 'flex' : 'none'; if(hidden && f.querySelector('input')) f.querySelector('input').focus(); }
         function createSubTaskElement(stData, tId, cId, pColor) {
              const item = document.createElement('div'); item.className = 'subtask-item'; item.dataset.subtaskId = stData.id;
-             const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = stData.completed; chk.addEventListener('change', () => toggleSubTaskComplete(cId, tId, stData.id));
-             chk.addEventListener('mousedown', e => e.stopPropagation());
+             const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = stData.completed; chk.addEventListener('change', () => toggleSubTaskComplete(cId, tId, stData.id)); chk.addEventListener('mousedown', e => e.stopPropagation());
              const span = document.createElement('span'); span.textContent = stData.text; if (stData.completed) span.classList.add('completed'); span.style.color = getContrastingTextColor(pColor);
-
-             const controls = document.createElement('div'); controls.className = 'subtask-controls'; // Container for buttons
-             controls.addEventListener('mousedown', e => e.stopPropagation()); // Prevent task drag when clicking buttons
-
-             const duplicateBtn = document.createElement('button'); // New Duplicate Button
-             duplicateBtn.className = 'subtask-btn';
-             duplicateBtn.innerHTML = '<i class="fas fa-copy"></i>';
-             duplicateBtn.title = "Duplicate sub-task";
-             duplicateBtn.addEventListener('click', () => duplicateSubTask(cId, tId, stData.id));
-
-             const deleteBtn = document.createElement('button'); // Existing Delete Button
-             deleteBtn.className = 'subtask-btn delete';
-             deleteBtn.innerHTML = '<i class="fas fa-times"></i>';
-             deleteBtn.title = "Delete sub-task";
-             deleteBtn.addEventListener('click', () => deleteSubTask(cId, tId, stData.id));
-
-             controls.appendChild(duplicateBtn);
-             controls.appendChild(deleteBtn);
-
-             item.appendChild(chk);
-             item.appendChild(span);
-             item.appendChild(controls); // Add the controls div instead of just the delete button
+             const controls = document.createElement('div'); controls.className = 'subtask-controls'; controls.addEventListener('mousedown', e => e.stopPropagation());
+             const duplicateBtn = document.createElement('button'); duplicateBtn.className = 'subtask-btn'; duplicateBtn.innerHTML = '<i class="fas fa-copy"></i>'; duplicateBtn.title = "Duplicate sub-task"; duplicateBtn.addEventListener('click', () => duplicateSubTask(cId, tId, stData.id));
+             const deleteBtn = document.createElement('button'); deleteBtn.className = 'subtask-btn delete'; deleteBtn.innerHTML = '<i class="fas fa-times"></i>'; deleteBtn.title = "Delete sub-task"; deleteBtn.addEventListener('click', () => deleteSubTask(cId, tId, stData.id));
+             controls.appendChild(duplicateBtn); controls.appendChild(deleteBtn);
+             item.appendChild(chk); item.appendChild(span); item.appendChild(controls);
              return item;
         }
         function addSubTask(cId, tId, text) { const t = getTaskById(cId, tId); if (!t) return; if (!t.subTasks) t.subTasks = []; t.subTasks.push({ id: `subtask-${appState.nextSubTaskId++}`, text, completed: false }); renderBoard(); }
         function toggleSubTaskComplete(cId, tId, stId) { const t = getTaskById(cId, tId); const st = t ? t.subTasks.find(s => s.id === stId) : null; if (st) { st.completed = !st.completed; renderBoard(); } }
         function deleteSubTask(cId, tId, stId) { const t = getTaskById(cId, tId); if (t) { t.subTasks = t.subTasks.filter(s => s.id !== stId); renderBoard(); } }
-        // --- NEW: Duplicate Sub-task Function ---
         function duplicateSubTask(columnId, taskId, subTaskId) {
-            const task = getTaskById(columnId, taskId);
-            if (!task || !task.subTasks) return;
-
-            const subTaskIndex = task.subTasks.findIndex(st => st.id === subTaskId);
-            if (subTaskIndex === -1) return;
-
+            const task = getTaskById(columnId, taskId); if (!task || !task.subTasks) return;
+            const subTaskIndex = task.subTasks.findIndex(st => st.id === subTaskId); if (subTaskIndex === -1) return;
             const originalSubTask = task.subTasks[subTaskIndex];
-            const newSubTask = {
-                id: `subtask-${appState.nextSubTaskId++}`,
-                text: `${originalSubTask.text} (Copy)`,
-                completed: originalSubTask.completed
-            };
-
-            task.subTasks.splice(subTaskIndex + 1, 0, newSubTask); // Insert after original
-            renderBoard();
+            const newSubTask = { id: `subtask-${appState.nextSubTaskId++}`, text: `${originalSubTask.text}`, completed: originalSubTask.completed };
+            task.subTasks.splice(subTaskIndex + 1, 0, newSubTask); renderBoard();
         }
-
 
         // --- Context Menu Management ---
         function hideAllMenus() { taskColorContextMenu.style.display = 'none'; columnContextMenu.style.display = 'none'; }
         function positionMenu(menuEl, x, y) { const rect = menuEl.getBoundingClientRect(); x = Math.min(x, window.innerWidth - rect.width - 5); y = Math.min(y, window.innerHeight - rect.height - 5); menuEl.style.left = `${x}px`; menuEl.style.top = `${y}px`; menuEl.style.display = 'flex'; }
         function populateAndShowContextMenu(x, y, tData) {
             taskColorContextMenu.innerHTML = ''; const { columnId, taskId } = currentContextMenuTask;
-            const items = [
-                { text: 'Sub-tasks', icon: 'fa-tasks', action: () => toggleSubtaskVisibility(columnId, taskId) },
-                { text: 'Duplicate Card', icon: 'fa-copy', action: () => duplicateTask(columnId, taskId) },
-                { text: 'Delete Card', icon: 'fa-trash-alt', action: () => deleteTask(columnId, taskId), isDelete: true }
-            ];
+            const items = [ { text: 'Sub-tasks', icon: 'fa-tasks', action: () => toggleSubtaskVisibility(columnId, taskId) }, { text: 'Duplicate Card', icon: 'fa-copy', action: () => duplicateTask(columnId, taskId) }, { text: 'Delete Card', icon: 'fa-trash-alt', action: () => deleteTask(columnId, taskId), isDelete: true } ];
             items.forEach(i => { const d = document.createElement('div'); d.className = `menu-item ${i.isDelete ? 'delete' : ''}`; d.innerHTML = `<i class="fas ${i.icon}"></i><span>${i.text}</span>`; d.addEventListener('click', () => { i.action(); hideAllMenus(); }); taskColorContextMenu.appendChild(d); });
             taskColorContextMenu.appendChild(document.createElement('hr')).className = 'menu-divider';
             PRESET_COLORS.forEach(c => { const d = document.createElement('div'); d.className = 'menu-item'; const s = document.createElement('div'); s.className = 'context-menu-color-swatch'; s.style.backgroundColor = c.value; d.innerHTML = `<span>${c.name}</span>`; if (c.value === tData.color) d.style.fontWeight = 'bold'; d.prepend(s); d.addEventListener('click', () => { updateTaskColor(columnId, taskId, c.value); hideAllMenus(); }); taskColorContextMenu.appendChild(d); });
@@ -483,26 +429,38 @@
             const rect = btnEl.getBoundingClientRect(); positionMenu(columnContextMenu, rect.left, rect.bottom + 5);
         }
 
-
         // --- Drag and Drop ---
-        function handleTaskDragStart(e) { const t = e.target.closest('.task-item'); if (!t || e.target.closest('input, button')) { e.preventDefault(); return; } draggedTask = t; sourceColumnId = t.dataset.columnId; e.dataTransfer.setData('text/plain', t.dataset.taskId); e.dataTransfer.effectAllowed = 'move'; setTimeout(() => t.classList.add('dragging'), 0); }
+        function handleTaskDragStart(e) {
+            const t = e.target.closest('.task-item');
+            // Prevent drag if clicking on interactive elements like buttons, inputs, or subtask controls
+            if (!t || e.target.closest('input, button, .subtask-controls, .star-btn')) {
+                e.preventDefault();
+                return;
+            }
+            draggedTask = t;
+            sourceColumnId = t.dataset.columnId;
+            e.dataTransfer.setData('text/plain', t.dataset.taskId);
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => t.classList.add('dragging'), 0);
+        }
         function handleTaskDragEnd() { if (draggedTask) draggedTask.classList.remove('dragging'); draggedTask = null; sourceColumnId = null; document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over')); }
         function handleDragOver(e) { e.preventDefault(); if (draggedTask) e.dataTransfer.dropEffect = 'move'; }
-        function handleTaskDragEnterColumn(e) { if (draggedTask) e.target.closest('.column')?.classList.add('drag-over'); }
-        function handleTaskDragLeaveColumn(e) { if (draggedTask && !e.currentTarget.contains(e.relatedTarget)) e.currentTarget.closest('.column')?.classList.remove('drag-over'); }
+        function handleTaskDragEnterColumn(e) { const col = e.target.closest('.column'); if (draggedTask && col) col.classList.add('drag-over'); }
+        function handleTaskDragLeaveColumn(e) { const col = e.target.closest('.column'); if (draggedTask && col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');}
         function handleTaskDrop(e, tColId) {
-            e.preventDefault(); e.target.closest('.column')?.classList.remove('drag-over'); if (!draggedTask || !sourceColumnId) return;
+            e.preventDefault(); const tColEl = e.target.closest('.column'); if (tColEl) tColEl.classList.remove('drag-over');
+            if (!draggedTask || !sourceColumnId) return;
             const b = getCurrentBoard(); if (!b) return; const tId = draggedTask.dataset.taskId; const sCol = b.columns.find(c => c.id === sourceColumnId); const sIdx = sCol ? sCol.tasks.findIndex(t => t.id === tId) : -1; if (sIdx === -1) return;
             const [tData] = sCol.tasks.splice(sIdx, 1); const tCol = b.columns.find(c => c.id === tColId); if (!tCol) { sCol.tasks.splice(sIdx, 0, tData); renderBoard(); return; }
-            const tList = e.target.closest('.column').querySelector('.task-list'); const refNode = Array.from(tList.querySelectorAll('.task-item:not(.dragging)')).find(el => e.clientY < el.getBoundingClientRect().top + el.offsetHeight / 2);
+            const tList = tColEl.querySelector('.task-list'); const refNode = Array.from(tList.querySelectorAll('.task-item:not(.dragging)')).find(el => e.clientY < el.getBoundingClientRect().top + el.offsetHeight / 2);
             const refIdx = refNode ? tCol.tasks.findIndex(t => t.id === refNode.dataset.taskId) : -1;
             if (refIdx !== -1) tCol.tasks.splice(refIdx, 0, tData); else tCol.tasks.push(tData);
             renderBoard();
         }
-        function handleColumnDragStart(e) { /* ... */ }
-        function handleColumnDragEnd() { /* ... */ }
-        function handleColumnDragOver(e) { /* ... */ }
-        function handleColumnDrop(e) { /* ... */ }
+        function handleColumnDragStart(e) { /* Placeholder */ }
+        function handleColumnDragEnd() { /* Placeholder */ }
+        function handleColumnDragOver(e) { /* Placeholder */ }
+        function handleColumnDrop(e) { /* Placeholder */ }
 
         // --- Global Listeners ---
         document.addEventListener('click', (e) => { if (!taskColorContextMenu.contains(e.target)) taskColorContextMenu.style.display = 'none'; if (!columnContextMenu.contains(e.target) && !e.target.closest('.column-menu-btn')) columnContextMenu.style.display = 'none'; if (!sidebar.contains(e.target) && !e.target.closest('#openSidebarBtn') && !sidebar.classList.contains('-translate-x-full')) closeSidebar(); });
