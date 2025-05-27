@@ -231,7 +231,7 @@
         function getContrastingTextColor(backgroundColor) { const isLight = body.classList.contains('light-mode'); const c = COLUMN_COLORS.find(c => c.value === backgroundColor || c.light === backgroundColor); if (isLight && c && backgroundColor === c.light) return '#1f2937'; const h = backgroundColor.replace('#', ''); const [r, g, b] = [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)]; return Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b)) > 135 ? '#1f2937' : '#f3f4f6'; }
 
         // --- Theme & Sidebar ---
-        function applyTheme(theme) { body.classList.toggle('light-mode', theme === 'light'); themeToggleBtn.classList.toggle('dark', theme !== 'light'); themeToggleIndicator.style.transform = theme === 'light' ? 'translateX(0.25rem)' : 'translateX(1.25rem)'; appState.theme = theme; }
+        function applyTheme(theme) { body.classList.toggle('light-mode', theme === 'light'); themeToggleBtn.classList.toggle('dark', theme !== 'light'); themeToggleIndicator.style.transform = theme === 'light' ? 'translateX(0.15rem)' : 'translateX(1.6rem)'; appState.theme = theme; }
         function toggleTheme() { applyTheme(appState.theme === 'dark' ? 'light' : 'dark'); saveAppState(); }
         function openSidebar() { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); }
         function closeSidebar() { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); }
