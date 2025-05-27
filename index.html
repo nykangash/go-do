@@ -21,69 +21,87 @@
     <style>
         /* --- Performance Note: For production, extract this CSS to a .css file and minify it. --- */
 
-        /* --- Global & Dark Mode --- */
+        /* --- Global & Dark Mode (Default) --- */
         body { font-family: 'Inter', sans-serif; background-color: #1f2a44; color: #e2e8f0; overscroll-behavior-x: none; transition: background-color 0.3s, color 0.3s; }
-        .board-container { display: flex; overflow-x: auto; padding: 20px; gap: 16px; min-height: calc(100vh - 150px); align-items: flex-start; }
-        .column { background-color: #2d3748; border-radius: 12px; width: 300px; min-width: 200px; max-width: 500px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: calc(100vh - 200px); resize: horizontal; overflow: hidden; position: relative; cursor: move; transition: background-color 0.2s; }
-        .column:hover { overflow: visible; }
-        .column-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4b5563; cursor: default; position: relative; }
-        .column-title { font-weight: 600; color: #e2e8f0; cursor: pointer; flex-grow: 1; padding: 4px 0; }
-        .column-title-input { font-weight: 600; color: #e2e8f0; border: none; background-color: #374151; padding: 4px; width: calc(100% - 30px); outline: 2px solid #60a5fa; border-radius: 4px; }
-        .column-menu-btn { color: #9ca3af; background: none; border: none; cursor: pointer; padding: 4px 8px; line-height: 1; font-size: 1.1rem; border-radius: 4px; }
-        .column-menu-btn:hover { color: #e2e8f0; background-color: #4b5563; }
-        .add-card-area { padding: 12px; border-top: 1px solid #4b5563; }
-        .new-task-input { width: 100%; padding: 8px 10px; border: 1px solid #4b5563; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; background-color: #2d3748; color: #e2e8f0; }
+        .board-container { display: flex; overflow-x: auto; padding: 20px; gap: 16px; min-height: calc(100vh - 150px); align-items: flex-start; } /* Main container for columns */
+        .column { background-color: #2d3748; border-radius: 12px; width: 300px; min-width: 200px; max-width: 500px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: calc(100vh - 200px); resize: horizontal; overflow: hidden; position: relative; /* Removed cursor: move; */ transition: background-color 0.2s, opacity 0.2s, transform 0.2s; }
+        .column:hover { overflow: visible; } /* Allow resize handle to show */
+        .column-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4b5563; cursor: grab; position: relative; } /* Make header grabbable */
+        .column-title { font-weight: 600; color: #e2e8f0; flex-grow: 1; padding: 4px 0; pointer-events: none; /* Make title non-interactive for clicks to pass through */ }
+        .column-title-input { font-weight: 600; color: #e2e8f0; border: none; background-color: #374151; padding: 4px; width: calc(100% - 30px); outline: 2px solid #60a5fa; border-radius: 4px; pointer-events: auto; /* Ensure input is interactive */ } /* Input for editing title */
+        .column-menu-btn { color: #9ca3af; background: none; border: none; cursor: pointer; padding: 4px 8px; line-height: 1; font-size: 1.1rem; border-radius: 4px; cursor: pointer !important; } /* Ensure menu button is always clickable */
+        .add-card-area { padding: 12px; border-top: 1px solid #4b5563; cursor: default; } /* Area for adding new cards */
+        .new-task-input { width: 100%; padding: 8px 10px; border: 1px solid #4b5563; border-radius: 6px; margin-bottom: 8px; box-sizing: border-box; background-color: #2d3748; color: #e2e8f0; cursor: text; }
         .add-column-btn { background-color: #374151; color: #e2e8f0; padding: 10px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; width: 300px; flex-shrink: 0; }
         .add-column-btn:hover { background-color: #4b5563; }
-        .add-column-btn-container { padding: 0 20px 20px 20px; }
+        .add-column-btn-container { padding: 0 20px 20px 20px; } /* Container for the add column button */
+
+        /* --- Sub-task Styling --- */
+        .subtask-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: default; }
         .subtask-item input[type="checkbox"] { appearance: none; width: 18px; height: 18px; border: 2px solid #60a5fa; border-radius: 50%; background-color: transparent; cursor: pointer; position: relative; transition: all 0.2s ease-in-out; flex-shrink: 0; }
         .subtask-item input[type="checkbox"]:checked { background-color: #60a5fa; border-color: #60a5fa; }
-        .subtask-item input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 50%; left: 50%; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: translate(-50%, -60%) rotate(45deg); display: block; }
+        .subtask-item input[type="checkbox"]:checked::after { content: ''; position: absolute; top: 50%; left: 50%; width: 5px; height: 10px; border: solid white; border-width: 0 2px 2px 0; transform: translate(-50%, -60%) rotate(45deg); display: block; } /* Checkmark style */
         .subtask-item span { flex-grow: 1; color: #cbd5e1; font-family: 'Roboto', sans-serif; font-size: 0.85rem; line-height: 1.3; transition: color 0.2s, text-decoration 0.2s; }
         .subtask-item span.completed { text-decoration: line-through; color: #9ca3af; }
-        .subtask-controls { display: flex; gap: 4px; margin-left: auto; } /* Added margin-left: auto */
+        .subtask-controls { display: flex; gap: 4px; margin-left: auto; } /* Buttons for sub-tasks */
         .subtask-btn { color: #9ca3af; background: none; border: none; cursor: pointer; padding: 4px; line-height: 1; font-size: 0.9rem; border-radius: 3px; }
         .subtask-btn:hover { color: #e2e8f0; background-color: #4b5563; }
         .subtask-btn.delete:hover { color: #f87171; background-color: #7f1d1d; }
-        .subtask-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
-        .subtask-list-container { margin-top: 8px; padding-left: 10px; display: flex; flex-direction: column; gap: 6px; }
-        .add-subtask-form { display: flex; gap: 8px; margin-top: 8px; padding-left: 10px; }
+        .subtask-list-container { margin-top: 8px; padding-left: 10px; display: flex; flex-direction: column; gap: 6px; cursor: default; }
+        .add-subtask-form { display: flex; gap: 8px; margin-top: 8px; padding-left: 10px; cursor: default; }
         .new-subtask-input { flex-grow: 1; padding: 6px 8px; border: 1px solid #4b5563; border-radius: 4px; background-color: #374151; color: #e2e8f0; font-size: 0.9em; }
         .confirm-add-subtask-btn { padding: 6px 10px; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9em; }
         .confirm-add-subtask-btn:hover { background-color: #1d4ed8; }
-        .task-list { padding: 8px 12px; overflow-y: auto; flex-grow: 1; min-height: 60px; }
+
+        /* --- Task (Card) Styling --- */
+        .task-list { padding: 8px 12px; overflow-y: auto; flex-grow: 1; min-height: 60px; cursor: default; } /* Container for tasks within a column */
         .task-item { border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); cursor: grab; display: flex; flex-direction: column; word-wrap: break-word; overflow-wrap: break-word; position: relative; transition: box-shadow 0.2s; }
         .task-item:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.4); }
         .task-main-content { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
         .task-item p.task-text { flex-grow: 1; margin-right: 8px; font-family: 'Roboto', sans-serif; font-size: 0.95rem; line-height: 1.4; }
-        .star-btn { position: absolute; top: 6px; right: 6px; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1rem; opacity: 0; transition: opacity 0.2s, color 0.2s; z-index: 10; padding: 4px; }
+        .star-btn { position: absolute; top: 6px; right: 6px; background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1rem; opacity: 0; transition: opacity 0.2s, color 0.2s; z-index: 10; padding: 4px; } /* Star button, shows on hover */
         .task-item:hover .star-btn { opacity: 1; }
         .star-btn:hover { color: #facc15; }
         .star-btn.starred { opacity: 1; color: #facc15; }
-        .task-controls { display: none; }
-        .task-item.dragging { opacity: 0.5; border: 2px dashed #60a5fa; }
-        .column.drag-over .task-list { background-color: #4b5563; outline: 2px dashed #60a5fa; outline-offset: -2px; border-radius: 8px; }
+        .task-controls { display: none; } /* Hidden (potentially for future use) */
+
+        /* --- Drag & Drop Styling --- */
+        .task-item.dragging { opacity: 0.5; border: 2px dashed #60a5fa; } /* Visual feedback for dragged task */
+        .column.drag-over .task-list { background-color: #4b5563; outline: 2px dashed #60a5fa; outline-offset: -2px; border-radius: 8px; } /* Visual feedback for drop target column */
+        .column.dragging-col { opacity: 0.4; transform: rotate(1deg); border: 2px dashed #a78bfa; cursor: grabbing; } /* Visual feedback for dragged column */
+        .column.drag-over-indicator { border-right: 3px solid #a78bfa; } /* Visual indicator for column drop position */
+
+
+        /* --- Scrollbar Styling --- */
         .board-container::-webkit-scrollbar, .task-list::-webkit-scrollbar, .column::-webkit-scrollbar { width: 8px; height: 8px; }
         .board-container::-webkit-scrollbar-thumb, .task-list::-webkit-scrollbar-thumb, .column::-webkit-scrollbar-thumb { background-color: #6b7280; border-radius: 4px; }
         .board-container::-webkit-scrollbar-track, .task-list::-webkit-scrollbar-track, .column::-webkit-scrollbar-track { background-color: #2d3748; }
+
+        /* --- Focus Styling --- */
         input:focus, button:focus-visible { outline: 2px solid #60a5fa !important; outline-offset: 1px; }
+
+        /* --- Sidebar Styling --- */
         #sidebar { background-color: #111827; transition: transform 0.3s ease-in-out; }
         #sidebarOverlay { transition: opacity 0.3s ease-in-out; }
         #sidebarOverlay.hidden { display: none; opacity: 0; }
         .sidebar-board-item { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 10px 15px; border-radius: 6px; transition: background-color 0.2s; }
         .sidebar-board-item:hover { background-color: #374151; }
-        .sidebar-board-item.active { background-color: #2563eb; font-weight: bold; }
+        .sidebar-board-item.active { background-color: #2563eb; font-weight: bold; } /* Active board indicator */
         .sidebar-board-item span { flex-grow: 1; margin-left: 12px; }
         .sidebar-board-item i { width: 16px; text-align: center; }
         .sidebar-board-delete-btn { background: none; border: none; color: #9ca3af; cursor: pointer; padding: 4px; border-radius: 4px; font-size: 0.9rem; flex-shrink: 0; }
         .sidebar-board-delete-btn:hover { color: #f87171; background-color: #581c874d; }
         #completedTasksBtn { display: block; width: 100%; text-align: left; padding: 10px 15px; border-radius: 6px; transition: background-color 0.2s; display: flex; align-items: center; gap: 12px; }
         #completedTasksBtn:hover { background-color: #374151; }
+
+        /* --- Theme Toggle Styling --- */
         #themeToggleBtn #themeToggleIndicator { transition: transform 0.2s ease-in-out; }
-        #themeToggleBtn.dark #themeToggleIndicator { transform: translateX(1.25rem); }
+        #themeToggleBtn.dark #themeToggleIndicator { transform: translateX(1.25rem); } /* Dark mode position */
         #themeToggleBtn.dark { background-color: #3b82f6; }
-        #themeToggleBtn:not(.dark) { background-color: #cbd5e1; }
-        #themeToggleBtn i { pointer-events: none; }
+        #themeToggleBtn:not(.dark) { background-color: #cbd5e1; } /* Light mode position */
+        #themeToggleBtn i { pointer-events: none; } /* Icons inside the toggle */
+
+        /* --- Context Menu Styling --- */
         .menu-base { position: absolute; z-index: 1000; background-color: #2d3748; border: 1px solid #4b5563; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); padding: 8px; display: none; flex-direction: column; gap: 4px; width: 200px; }
         .menu-item { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; border-radius: 6px; transition: background-color 0.2s; color: #e2e8f0; font-size: 0.9rem; gap: 10px; }
         .menu-item:hover { background-color: #374151; }
@@ -92,9 +110,11 @@
         .menu-item.delete:hover { background-color: #7f1d1d; color: #fee2e2; }
         hr.menu-divider { border-top: 1px solid #4b5563; margin: 4px 0; }
         .context-menu-color-swatch { width: 16px; height: 16px; border-radius: 50%; margin-right: 0px; border: 1px solid #6b7280; }
-        .submenu { position: relative; }
+        .submenu { position: relative; } /* Submenu positioning */
         .submenu-content { position: absolute; left: 100%; top: -8px; display: none; }
-        .submenu:hover .submenu-content { display: flex; }
+        .submenu:hover .submenu-content { display: flex; } /* Show submenu on hover */
+
+        /* --- Light Mode Styling --- */
         body.light-mode { background-color: #f9fafb; color: #111827; }
         body.light-mode .column { background-color: #e5e7eb; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         body.light-mode .column-header { border-bottom-color: #d1d5db; }
@@ -132,9 +152,7 @@
         body.light-mode .subtask-item input[type="checkbox"] { border-color: #3b82f6; }
     </style>
 </head>
-<body class="text-gray-200">
-
-    <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-900 text-white p-5 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 shadow-lg">
+<body class="text-gray-200"> <div id="sidebar" class="fixed top-0 left-0 h-full w-64 bg-gray-900 text-white p-5 transform -translate-x-full transition-transform duration-300 ease-in-out z-50 shadow-lg">
         <h2 class="text-2xl font-bold mb-6 flex justify-between items-center">
             Go-do Menu
             <button id="closeSidebarBtn" class="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
@@ -153,10 +171,7 @@
             <span class="text-base flex items-center"><i class="fas fa-palette mr-3"></i>Theme</span>
             <button id="themeToggleBtn" class="relative inline-flex items-center h-6 rounded-full w-11 focus:outline-none">
                 <span class="sr-only">Toggle Theme</span>
-                 <i class="fas fa-sun absolute left-1 top-1/2 -translate-y-1/2 text-yellow-400 text-xs z-10"></i>
-                <span id="themeToggleIndicator" class="inline-block w-4 h-4 transform bg-white rounded-full translate-x-1"></span>
-                 <i class="fas fa-moon absolute right-1 top-1/2 -translate-y-1/2 text-gray-300 text-xs z-10"></i>
-            </button>
+                 <i class="fas fa-sun absolute left-1 top-1/2 -translate-y-1/2 text-yellow-400 text-xs z-10"></i> <span id="themeToggleIndicator" class="inline-block w-4 h-4 transform bg-white rounded-full translate-x-1"></span> <i class="fas fa-moon absolute right-1 top-1/2 -translate-y-1/2 text-gray-300 text-xs z-10"></i> </button>
         </div>
     </div>
     <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
@@ -166,7 +181,7 @@
             <button id="openSidebarBtn" class="text-2xl hover:bg-gray-700 p-2 rounded-md">
                 <i class="fas fa-bars"></i>
             </button>
-             <span id="currentBoardNameHeader" class="text-xl font-semibold">Loading...</span>
+            <span id="currentBoardNameHeader" class="text-xl font-semibold">Loading...</span>
         </div>
         <button id="addBoardBtnGlobal" class="add-board-btn text-white bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg text-lg flex items-center gap-2">
             <i class="fas fa-plus"></i>
@@ -174,18 +189,17 @@
         </button>
     </header>
 
-    <div id="boardContainer" class="board-container"></div>
+    <div id="boardContainer" class="board-container">
+        </div>
     <div class="add-column-btn-container">
         <button id="addColumnBtnGlobal" class="add-column-btn">
             <i class="fas fa-plus mr-2"></i>Add New List
         </button>
     </div>
 
-    <div id="taskColorContextMenu" class="menu-base"></div>
-    <div id="columnContextMenu" class="menu-base"></div>
-
-    <script>
+    <div id="taskColorContextMenu" class="menu-base"></div> <div id="columnContextMenu" class="menu-base"></div> <script>
         // --- DOM Selection ---
+        // Get references to key HTML elements for easier access.
         const body = document.body;
         const boardContainer = document.getElementById('boardContainer');
         const addColumnBtnGlobal = document.getElementById('addColumnBtnGlobal');
@@ -203,38 +217,54 @@
         const currentBoardNameHeader = document.getElementById('currentBoardNameHeader');
 
         // --- Board State ---
+        // The main object holding all application data: boards, columns, tasks, etc.
         let appState = { boards: [], currentBoardId: null, nextBoardId: 1, nextColumnId: 1, nextTaskId: 1, nextSubTaskId: 1, theme: 'dark' };
+        // Variables to manage drag-and-drop operations.
         let draggedTask = null, sourceColumnId = null, draggedColumn = null;
+        // Variables to track the currently targeted item for context menus.
         let currentContextMenuTask = { columnId: null, taskId: null };
         let currentContextMenuColumn = { columnId: null };
 
         // --- Preset Colors ---
+        // Define standard colors for tasks and columns.
         const PRESET_COLORS = [ { name: 'Gray', value: '#6B7280' }, { name: 'Red', value: '#EF4444' }, { name: 'Amber', value: '#F59E0B' }, { name: 'Green', value: '#10B981' }, { name: 'Blue', value: '#3B82F6' }, { name: 'Violet', value: '#8B5CF6' } ];
         const DEFAULT_TASK_COLOR = PRESET_COLORS[0].value;
         const COLUMN_COLORS = [ { name: 'Default', value: '#2d3748', light: '#e5e7eb' }, { name: 'Deep Blue', value: '#1e40af', light: '#dbeafe' }, { name: 'Forest Green', value: '#166534', light: '#d1fae5' }, { name: 'Rich Purple', value: '#581c87', light: '#f3e8ff' }, { name: 'Warm Red', value: '#991b1b', light: '#fee2e2' }, { name: 'Slate Gray', value: '#334155', light: '#e2e8f0' } ];
         const DEFAULT_COLUMN_COLOR = COLUMN_COLORS[0];
 
         // --- IndexedDB Setup ---
+        // Define database name, version, and store name for local data persistence.
         const DB_NAME = 'GoDoDB_v4';
         const DB_VERSION = 1;
         const STORE_NAME = 'appState';
-        let db;
+        let db; // Database instance variable.
 
         // --- IndexedDB Functions ---
+        // Opens (or creates/upgrades) the IndexedDB database.
         function openDB() { return new Promise((resolve, reject) => { const request = indexedDB.open(DB_NAME, DB_VERSION); request.onupgradeneeded = e => { e.target.result.objectStoreNames.contains(STORE_NAME) || e.target.result.createObjectStore(STORE_NAME, { keyPath: 'id' }); }; request.onsuccess = e => { db = e.target.result; resolve(db); }; request.onerror = e => { console.error('IndexedDB error:', e.target.errorCode); reject('IndexedDB error: ' + e.target.errorCode); }; }); }
+        // Saves the current `appState` to IndexedDB and theme to localStorage.
         async function saveAppState() { try { if (!db) await openDB(); const tx = db.transaction([STORE_NAME], 'readwrite').objectStore(STORE_NAME); tx.put({ id: 'GoDoAppState', data: appState }); localStorage.setItem('GoDoTheme', appState.theme); } catch (error) { console.error('Error saving to IndexedDB:', error); } }
-        async function loadAppState() { try { if (!db) db = await openDB(); const request = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).get('GoDoAppState'); request.onsuccess = (event) => { const result = event.target.result; let needsDefault = true; if (result && result.data && result.data.boards) { appState = result.data; needsDefault = appState.boards.length === 0; let maxB = 0, maxC = 0, maxT = 0, maxS = 0; appState.boards.forEach(b => { maxB = Math.max(maxB, parseInt((b.id || 'b-0').split('-')[1])); b.columns = b.columns || []; b.columns.forEach(c => { maxC = Math.max(maxC, parseInt((c.id || 'c-0').split('-')[1])); c.width = c.width || 300; c.color = c.color || DEFAULT_COLUMN_COLOR.value; c.tasks = c.tasks || []; c.tasks.forEach(t => { maxT = Math.max(maxT, parseInt((t.id || 't-0').split('-')[1])); t.color = t.color || DEFAULT_TASK_COLOR; t.subTasks = t.subTasks || []; t.isStarred = t.isStarred || false; t.createdAt = t.createdAt || Date.now(); t.subTasks.forEach(s => maxS = Math.max(maxS, parseInt((s.id || 's-0').split('-')[1]))); }); }); }); appState.nextBoardId = Math.max(appState.nextBoardId || 1, maxB + 1); appState.nextColumnId = Math.max(appState.nextColumnId || 1, maxC + 1); appState.nextTaskId = Math.max(appState.nextTaskId || 1, maxT + 1); appState.nextSubTaskId = Math.max(appState.nextSubTaskId || 1, maxS + 1); if (!appState.currentBoardId || !appState.boards.find(b => b.id === appState.currentBoardId)) { appState.currentBoardId = appState.boards.length > 0 ? appState.boards[0].id : null; } } if (needsDefault) { appState = { boards: [ { id: 'board-1', title: 'My First Board', columns: [ { id: 'col-1', title: 'To Do', tasks: [ {id: 'task-1', text: 'Explore Go-do!', color: PRESET_COLORS[4].value, subTasks: [ {id: 'subtask-1', text: 'Add a list', completed: false}, {id: 'subtask-2', text: 'Star a card', completed: false} ], isStarred: false, createdAt: Date.now()}, {id: 'task-2', text: 'Try Dark Mode!', color: PRESET_COLORS[2].value, subTasks: [], isStarred: true, createdAt: Date.now()-1000} ], width: 320, color: DEFAULT_COLUMN_COLOR.value }, { id: 'col-2', title: 'Done', tasks: [], width: 300, color: DEFAULT_COLUMN_COLOR.value }, ],} ], currentBoardId: 'board-1', nextBoardId: 2, nextColumnId: 3, nextTaskId: 3, nextSubTaskId: 3, theme: localStorage.getItem('GoDoTheme') || 'dark' }; } appState.theme = localStorage.getItem('GoDoTheme') || appState.theme || 'dark'; applyTheme(appState.theme); renderBoard(); }; request.onerror = () => { /* Fallback ... */ }; } catch (error) { /* Fallback ... */ } }
+        // Loads the application state from IndexedDB or sets up a default state.
+        async function loadAppState() { try { if (!db) db = await openDB(); const request = db.transaction([STORE_NAME], 'readonly').objectStore(STORE_NAME).get('GoDoAppState'); request.onsuccess = (event) => { const result = event.target.result; let needsDefault = true; if (result && result.data && result.data.boards) { appState = result.data; needsDefault = appState.boards.length === 0; let maxB = 0, maxC = 0, maxT = 0, maxS = 0; /* Data migration & ID calculation */ appState.boards.forEach(b => { maxB = Math.max(maxB, parseInt((b.id || 'b-0').split('-')[1])); b.columns = b.columns || []; b.columns.forEach(c => { maxC = Math.max(maxC, parseInt((c.id || 'c-0').split('-')[1])); c.width = c.width || 300; c.color = c.color || DEFAULT_COLUMN_COLOR.value; c.tasks = c.tasks || []; c.tasks.forEach(t => { maxT = Math.max(maxT, parseInt((t.id || 't-0').split('-')[1])); t.color = t.color || DEFAULT_TASK_COLOR; t.subTasks = t.subTasks || []; t.isStarred = t.isStarred || false; t.createdAt = t.createdAt || Date.now(); t.subTasks.forEach(s => maxS = Math.max(maxS, parseInt((s.id || 's-0').split('-')[1]))); }); }); }); appState.nextBoardId = Math.max(appState.nextBoardId || 1, maxB + 1); appState.nextColumnId = Math.max(appState.nextColumnId || 1, maxC + 1); appState.nextTaskId = Math.max(appState.nextTaskId || 1, maxT + 1); appState.nextSubTaskId = Math.max(appState.nextSubTaskId || 1, maxS + 1); if (!appState.currentBoardId || !appState.boards.find(b => b.id === appState.currentBoardId)) { appState.currentBoardId = appState.boards.length > 0 ? appState.boards[0].id : null; } } if (needsDefault) { /* Default board setup */ appState = { boards: [ { id: 'board-1', title: 'My First Board', columns: [ { id: 'col-1', title: 'To Do', tasks: [ {id: 'task-1', text: 'Explore Go-do!', color: PRESET_COLORS[4].value, subTasks: [ {id: 'subtask-1', text: 'Add a list', completed: false}, {id: 'subtask-2', text: 'Star a card', completed: false} ], isStarred: false, createdAt: Date.now()}, {id: 'task-2', text: 'Try Dark Mode!', color: PRESET_COLORS[2].value, subTasks: [], isStarred: true, createdAt: Date.now()-1000} ], width: 320, color: DEFAULT_COLUMN_COLOR.value }, { id: 'col-2', title: 'Done', tasks: [], width: 300, color: DEFAULT_COLUMN_COLOR.value }, ],} ], currentBoardId: 'board-1', nextBoardId: 2, nextColumnId: 3, nextTaskId: 3, nextSubTaskId: 3, theme: localStorage.getItem('GoDoTheme') || 'dark' }; } appState.theme = localStorage.getItem('GoDoTheme') || appState.theme || 'dark'; applyTheme(appState.theme); renderBoard(); }; request.onerror = () => { /* Fallback if DB load fails */ console.error("Failed to load state, starting fresh."); renderBoard(); }; } catch (error) { /* Fallback */ console.error("Error during DB load:", error); renderBoard(); } }
 
         // --- Utilities ---
+        // Returns the currently active board object.
         function getCurrentBoard() { return appState.boards.find(b => b.id === appState.currentBoardId) || null; }
+        // Finds a specific task by its ID within a specific column.
         function getTaskById(columnId, taskId) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === columnId) : null; return c ? c.tasks.find(t => t.id === taskId) : null; }
+        // Determines whether text should be light or dark based on background color for contrast.
         function getContrastingTextColor(backgroundColor) { const isLight = body.classList.contains('light-mode'); const c = COLUMN_COLORS.find(c => c.value === backgroundColor || c.light === backgroundColor); if (isLight && c && backgroundColor === c.light) return '#1f2937'; const h = backgroundColor.replace('#', ''); const [r, g, b] = [parseInt(h.substring(0, 2), 16), parseInt(h.substring(2, 4), 16), parseInt(h.substring(4, 6), 16)]; return Math.sqrt(0.299 * (r * r) + 0.587 * (g * g) + 0.114 * (b * b)) > 135 ? '#1f2937' : '#f3f4f6'; }
 
         // --- Theme & Sidebar ---
+        // Applies the selected theme (light/dark) to the body and updates the toggle switch.
         function applyTheme(theme) { body.classList.toggle('light-mode', theme === 'light'); themeToggleBtn.classList.toggle('dark', theme !== 'light'); themeToggleIndicator.style.transform = theme === 'light' ? 'translateX(0.15rem)' : 'translateX(1.6rem)'; appState.theme = theme; }
+        // Toggles between light and dark themes.
         function toggleTheme() { applyTheme(appState.theme === 'dark' ? 'light' : 'dark'); saveAppState(); }
+        // Opens the sidebar menu.
         function openSidebar() { sidebar.classList.remove('-translate-x-full'); sidebarOverlay.classList.remove('hidden'); }
+        // Closes the sidebar menu.
         function closeSidebar() { sidebar.classList.add('-translate-x-full'); sidebarOverlay.classList.add('hidden'); }
+        // Event listeners for theme toggle and sidebar controls.
         themeToggleBtn.addEventListener('click', toggleTheme);
         openSidebarBtn.addEventListener('click', openSidebar);
         closeSidebarBtn.addEventListener('click', closeSidebar);
@@ -243,160 +273,245 @@
 
 
         // --- Board Rendering (Optimized with DocumentFragment) ---
+        // Renders the list of boards in the sidebar.
         function renderBoardList() {
             sidebarBoardList.innerHTML = '';
-            const fragment = document.createDocumentFragment(); // Use fragment
+            const fragment = document.createDocumentFragment(); // Use fragment for better performance.
             if (appState.boards.length === 0) { sidebarBoardList.innerHTML = '<p class="px-4 py-2 text-gray-400">No boards yet...</p>'; return; }
             appState.boards.forEach(board => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'sidebar-board-item';
-                if (board.id === appState.currentBoardId) itemDiv.classList.add('active');
-                const boardBtn = document.createElement('button');
+                if (board.id === appState.currentBoardId) itemDiv.classList.add('active'); // Highlight active board.
+                const boardBtn = document.createElement('button'); // Button to switch to this board.
                 boardBtn.innerHTML = `<i class="fas fa-clipboard-list text-gray-400"></i><span>${board.title}</span>`;
                 boardBtn.className = 'flex items-center gap-3 flex-grow';
                 boardBtn.addEventListener('click', () => { switchBoard(board.id); closeSidebar(); });
-                const deleteBtn = document.createElement('button');
+                const deleteBtn = document.createElement('button'); // Button to delete this board.
                 deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
                 deleteBtn.className = 'sidebar-board-delete-btn';
                 deleteBtn.title = `Delete board: ${board.title}`;
                 deleteBtn.addEventListener('click', (e) => { e.stopPropagation(); confirmDeleteBoard(board.id, board.title); });
                 itemDiv.appendChild(boardBtn);
                 itemDiv.appendChild(deleteBtn);
-                fragment.appendChild(itemDiv); // Append to fragment
+                fragment.appendChild(itemDiv); // Append to fragment.
             });
-            sidebarBoardList.appendChild(fragment); // Append fragment once
+            sidebarBoardList.appendChild(fragment); // Append fragment once to the DOM.
         }
 
+        // Renders the entire board (columns and tasks) for the current board.
         function renderBoard() {
-            boardContainer.innerHTML = '';
+            boardContainer.innerHTML = ''; // Clear existing board.
             const currentBoard = getCurrentBoard();
             const isLight = body.classList.contains('light-mode');
-            const fragment = document.createDocumentFragment(); // Use fragment
+            const fragment = document.createDocumentFragment(); // Use fragment for performance.
 
-            if (!currentBoard) { boardContainer.innerHTML = '<p class="text-center text-xl p-10">No board selected.</p>'; currentBoardNameHeader.textContent = 'Go-do'; addColumnBtnGlobal.style.display = 'none'; renderBoardList(); saveAppState(); return; }
-            currentBoardNameHeader.textContent = currentBoard.title;
-            addColumnBtnGlobal.style.display = 'block';
+            if (!currentBoard) { // Handle case with no board selected or no boards exist.
+                boardContainer.innerHTML = '<p class="text-center text-xl p-10">No board selected. Create one!</p>';
+                currentBoardNameHeader.textContent = 'Go-do';
+                addColumnBtnGlobal.style.display = 'none'; // Hide add column button.
+                renderBoardList(); // Update sidebar list.
+                saveAppState(); // Save state (e.g., if a board was deleted).
+                return;
+            }
+            currentBoardNameHeader.textContent = currentBoard.title; // Update header title.
+            addColumnBtnGlobal.style.display = 'block'; // Show add column button.
 
+            // Iterate through columns and create their elements.
             currentBoard.columns.forEach(colData => {
                 const colEl = createColumnElement(colData);
-                if (colData.width) colEl.style.width = `${colData.width}px`;
+                if (colData.width) colEl.style.width = `${colData.width}px`; // Apply stored width.
                 const cInfo = COLUMN_COLORS.find(c => c.value === colData.color) || DEFAULT_COLUMN_COLOR;
-                const bgColor = isLight ? cInfo.light : cInfo.value;
+                const bgColor = isLight ? cInfo.light : cInfo.value; // Get correct color based on theme.
                 colEl.style.backgroundColor = bgColor;
+                // Adjust text/icon color for contrast.
                 const headerColor = getContrastingTextColor(bgColor);
                 colEl.querySelector('.column-title').style.color = headerColor;
                 colEl.querySelector('.column-menu-btn').style.color = headerColor;
                 colEl.querySelector('.column-header').style.borderBottomColor = headerColor === '#f3f4f6' ? '#4b5563' : '#d1d5db';
-                fragment.appendChild(colEl); // Append to fragment
+                fragment.appendChild(colEl); // Append to fragment.
             });
 
-            boardContainer.appendChild(fragment); // Append fragment once
-            renderBoardList();
-            saveAppState();
+            boardContainer.appendChild(fragment); // Append fragment once.
+            renderBoardList(); // Update sidebar.
+            saveAppState(); // Save any changes.
         }
 
         // --- Board Management ---
+        // Adds a new, empty board.
         function addNewBoard() { const t = prompt("New board name:", "My Board"); if (t && t.trim()) { const b = { id: `board-${appState.nextBoardId++}`, title: t.trim(), columns: [{ id: `col-${appState.nextColumnId++}`, title: 'To Do', tasks: [], width: 300, color: DEFAULT_COLUMN_COLOR.value }] }; appState.boards.push(b); switchBoard(b.id); } }
+        // Switches the currently active board.
         function switchBoard(id) { appState.currentBoardId = id; renderBoard(); }
         addBoardBtnGlobal.addEventListener('click', addNewBoard);
+        // Confirms and then deletes a board.
         function confirmDeleteBoard(boardId, boardTitle) { if (confirm(`Are you sure you want to delete the board "${boardTitle}"? This cannot be undone.`)) { appState.boards = appState.boards.filter(b => b.id !== boardId); if (appState.currentBoardId === boardId) { appState.currentBoardId = appState.boards.length > 0 ? appState.boards[0].id : null; } renderBoard(); } }
 
 
-        // --- Column Management (Optimized with DocumentFragment) ---
+        // --- Column Management ---
+        // Creates a column DOM element from column data.
         function createColumnElement(cData) {
-            const div = document.createElement('div'); div.className = 'column'; div.dataset.columnId = cData.id; div.draggable = true;
-            div.addEventListener('dragstart', handleColumnDragStart); div.addEventListener('dragend', handleColumnDragEnd);
-            div.addEventListener('mousedown', e => { div.draggable = !e.target.closest('input, button, .task-item, .column-title, .new-task-input, .column-menu-btn'); });
-            div.addEventListener('mouseup', () => { div.draggable = true; });
+            const div = document.createElement('div'); div.className = 'column'; div.dataset.columnId = cData.id; div.draggable = false; // Set initial draggable to false
+
             const h = document.createElement('div'); h.className = 'column-header';
-            const t = document.createElement('span'); t.className = 'column-title'; t.textContent = cData.title; t.addEventListener('click', () => makeTitleEditable(t, cData.id));
-            const m = document.createElement('button'); m.className = 'column-menu-btn'; m.innerHTML = '<i class="fas fa-ellipsis-h"></i>'; m.title = "Options"; m.addEventListener('click', e => { e.stopPropagation(); showColumnContextMenu(e.target, cData.id); });
+            const t = document.createElement('span'); t.className = 'column-title'; t.textContent = cData.title;
+            const m = document.createElement('button'); m.className = 'column-menu-btn'; m.innerHTML = '<i class="fas fa-ellipsis-h"></i>'; m.title = "Options"; m.addEventListener('click', e => { e.stopPropagation(); showColumnContextMenu(e.target, cData.id); }); // Column context menu.
             h.appendChild(t); h.appendChild(m);
-            const l = document.createElement('div'); l.className = 'task-list';
-            l.addEventListener('dragover', handleDragOver); l.addEventListener('drop', e => handleTaskDrop(e, cData.id));
-            l.addEventListener('dragenter', handleTaskDragEnterColumn); l.addEventListener('dragleave', handleTaskDragLeaveColumn);
 
-            const taskFragment = document.createDocumentFragment(); // Fragment for tasks
+            // Make the header draggable, except for the menu button.
+            h.addEventListener('mousedown', e => {
+                 // If the click target is the menu button or its icon, don't drag.
+                 if (e.target.closest('.column-menu-btn')) {
+                    div.draggable = false;
+                 } else {
+                    // Otherwise, allow dragging from anywhere else on the header.
+                    div.draggable = true;
+                 }
+            });
+            // Reset draggable after mouse up or leaving the column.
+            div.addEventListener('mouseup', () => { div.draggable = false; });
+            div.addEventListener('mouseleave', () => { div.draggable = false; });
+
+            // Column drag-and-drop listeners on the main div
+            div.addEventListener('dragstart', handleColumnDragStart);
+            div.addEventListener('dragend', handleColumnDragEnd);
+
+            const l = document.createElement('div'); l.className = 'task-list'; // Task container.
+            // Task drag-and-drop listeners.
+            l.addEventListener('dragover', handleTaskDragOver);
+            l.addEventListener('drop', e => handleTaskDrop(e, cData.id));
+            l.addEventListener('dragenter', handleTaskDragEnterColumn);
+            l.addEventListener('dragleave', handleTaskDragLeaveColumn);
+
+            const taskFragment = document.createDocumentFragment(); // Fragment for tasks.
             cData.tasks.forEach(tData => taskFragment.appendChild(createTaskElement(tData, cData.id)));
-            l.appendChild(taskFragment); // Append tasks once
+            l.appendChild(taskFragment); // Append tasks once.
 
-            const a = document.createElement('div'); a.className = 'add-card-area';
+            const a = document.createElement('div'); a.className = 'add-card-area'; // Area for new task input.
             const i = document.createElement('input'); i.type = 'text'; i.className = 'new-task-input'; i.placeholder = 'Add a card...';
-            i.addEventListener('keypress', e => { if (e.key === 'Enter' && i.value.trim()) { addTaskToColumn(cData.id, i.value.trim()); i.value = ''; } });
+            i.addEventListener('keypress', e => { if (e.key === 'Enter' && i.value.trim()) { addTaskToColumn(cData.id, i.value.trim()); i.value = ''; } }); // Add task on Enter.
             const btn = document.createElement('button'); btn.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-3 rounded-md text-sm'; btn.textContent = 'Add Card';
-            btn.addEventListener('click', () => { if (i.value.trim()) { addTaskToColumn(cData.id, i.value.trim()); i.value = ''; } });
+            btn.addEventListener('click', () => { if (i.value.trim()) { addTaskToColumn(cData.id, i.value.trim()); i.value = ''; } }); // Add task on button click.
             a.appendChild(i); a.appendChild(btn);
             div.appendChild(h); div.appendChild(l); div.appendChild(a);
             return div;
         }
-        function makeTitleEditable(titleSpan, columnId) { const b = getCurrentBoard(); if (!b) return; const c = b.columns.find(col => col.id === columnId); if (!c) return; const currentTitle = titleSpan.textContent; const input = document.createElement('input'); input.type = 'text'; input.value = currentTitle; input.className = 'column-title-input'; titleSpan.replaceWith(input); input.focus(); input.select(); const save = () => { const newTitle = input.value.trim(); if (newTitle) c.title = newTitle; renderBoard(); }; input.addEventListener('blur', save); input.addEventListener('keypress', e => { if (e.key === 'Enter') input.blur(); }); }
+
+        // Makes a column title editable by replacing it with an input field.
+        function makeTitleEditable(titleSpan, columnId) {
+            const b = getCurrentBoard(); if (!b) return;
+            const c = b.columns.find(col => col.id === columnId); if (!c) return;
+            const currentTitle = titleSpan.textContent;
+            const input = document.createElement('input'); input.type = 'text'; input.value = currentTitle; input.className = 'column-title-input';
+            titleSpan.style.display = 'none'; // Hide the span
+            titleSpan.parentElement.insertBefore(input, titleSpan); // Insert input before span
+            input.focus(); input.select();
+            const save = () => {
+                const newTitle = input.value.trim();
+                if (newTitle) c.title = newTitle;
+                // Check if input is still there before removing (might already be gone)
+                if (input.parentNode) {
+                   input.remove(); // Remove input
+                }
+                titleSpan.style.display = ''; // Show span again
+                renderBoard(); // Rerender - consider a more lightweight update
+            };
+            input.addEventListener('blur', save);
+            input.addEventListener('keypress', e => { if (e.key === 'Enter') input.blur(); });
+        }
+        // Adds a new column to the current board.
         function addNewColumn() { const b = getCurrentBoard(); if (!b) return; const t = prompt("New list title:", "New List"); if (t && t.trim()) { b.columns.push({ id: `col-${appState.nextColumnId++}`, title: t.trim(), tasks: [], width: 300, color: DEFAULT_COLUMN_COLOR.value }); renderBoard(); } }
         addColumnBtnGlobal.addEventListener('click', addNewColumn);
+        // Confirms and then deletes a column.
         function confirmDeleteColumn(id) { if (confirm("Delete this list and all its cards?")) deleteColumn(id); }
+        // Deletes a column by its ID.
         function deleteColumn(id) { const b = getCurrentBoard(); if (b) { b.columns = b.columns.filter(c => c.id !== id); renderBoard(); } }
+
+
+        // Updates the background color of a column.
         function updateColumnColor(id, color) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (c) { c.color = color; renderBoard(); } }
+
+
+        // Sorts tasks within a column by name or date.
         function sortColumn(id, type) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (!c) return; if (type === 'name-az') c.tasks.sort((a, b) => a.text.localeCompare(b.text)); else if (type === 'date-new') c.tasks.sort((a, b) => b.createdAt - a.createdAt); renderBoard(); }
+
+
+        // Removes tasks where all sub-tasks are completed.
         function clearCompleted(id) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === id) : null; if (!c) return; c.tasks = c.tasks.filter(t => !t.subTasks.every(st => st.completed)); renderBoard(); }
 
 
-        // --- Task Management (Optimized with DocumentFragment) ---
+
+
+        // --- Task Management ---
+        // Creates a task (card) DOM element from task data.
         function createTaskElement(tData, cId) {
             const div = document.createElement('div'); div.className = 'task-item'; div.dataset.taskId = tData.id; div.dataset.columnId = cId; div.draggable = true; div.style.backgroundColor = tData.color || DEFAULT_TASK_COLOR;
-            div.addEventListener('contextmenu', e => { e.preventDefault(); hideAllMenus(); currentContextMenuTask = { columnId: cId, taskId: tData.id }; populateAndShowContextMenu(e.clientX, e.clientY, tData); });
+            div.addEventListener('contextmenu', e => { e.preventDefault(); hideAllMenus(); currentContextMenuTask = { columnId: cId, taskId: tData.id }; populateAndShowContextMenu(e.clientX, e.clientY, tData); }); // Task context menu on right-click.
             const star = document.createElement('button'); star.className = 'star-btn'; star.innerHTML = '<i class="fas fa-star"></i>'; star.title = "Star this card"; if (tData.isStarred) star.classList.add('starred');
-            star.addEventListener('click', e => { e.stopPropagation(); toggleStarTask(cId, tData.id); });
+            star.addEventListener('click', e => { e.stopPropagation(); toggleStarTask(cId, tData.id); }); // Star/unstar task.
             const main = document.createElement('div'); main.className = 'task-main-content';
-            const p = document.createElement('p'); p.className = 'task-text'; p.textContent = tData.text; p.style.color = getContrastingTextColor(tData.color || DEFAULT_TASK_COLOR);
+            const p = document.createElement('p'); p.className = 'task-text'; p.textContent = tData.text; p.style.color = getContrastingTextColor(tData.color || DEFAULT_TASK_COLOR); // Task text with contrast color.
             main.appendChild(p); div.appendChild(star); div.appendChild(main);
+            // Form for adding new sub-tasks (initially hidden).
             const subForm = document.createElement('div'); subForm.className = 'add-subtask-form'; subForm.style.display = 'none';
             const subInput = document.createElement('input'); subInput.type = 'text'; subInput.className = 'new-subtask-input'; subInput.placeholder = 'New sub-task...';
             const subBtn = document.createElement('button'); subBtn.className = 'confirm-add-subtask-btn'; subBtn.textContent = 'Add';
             const addAction = () => { if (subInput.value.trim()) { addSubTask(cId, tData.id, subInput.value.trim()); subInput.value = ''; } };
-            subInput.addEventListener('keypress', e => { if (e.key === 'Enter') addAction(); });
-            subInput.addEventListener('mousedown', e => e.stopPropagation());
-            subBtn.addEventListener('click', e => { e.stopPropagation(); addAction(); });
+            subInput.addEventListener('keypress', e => { if (e.key === 'Enter') addAction(); }); // Add sub-task on Enter.
+            subInput.addEventListener('mousedown', e => e.stopPropagation()); // Prevent task drag when clicking input.
+            subBtn.addEventListener('click', e => { e.stopPropagation(); addAction(); }); // Add sub-task on button click.
             subForm.appendChild(subInput); subForm.appendChild(subBtn);
+            // Container for sub-tasks (initially hidden or shown if sub-tasks exist).
             const subList = document.createElement('div'); subList.className = 'subtask-list-container'; subList.style.display = 'none';
 
             if (tData.subTasks && tData.subTasks.length > 0) {
-                 const subTaskFragment = document.createDocumentFragment(); // Fragment for subtasks
+                 const subTaskFragment = document.createDocumentFragment(); // Fragment for sub-tasks.
                  tData.subTasks.forEach(st => subTaskFragment.appendChild(createSubTaskElement(st, tData.id, cId, tData.color || DEFAULT_TASK_COLOR)));
-                 subList.appendChild(subTaskFragment); // Append subtasks once
-                 subList.style.display = 'flex'; // Show if subtasks exist
+                 subList.appendChild(subTaskFragment); // Append sub-tasks once.
+                 subList.style.display = 'flex'; // Show if sub-tasks exist.
             }
 
             div.appendChild(subForm); div.appendChild(subList);
             div.addEventListener('dragstart', handleTaskDragStart); div.addEventListener('dragend', handleTaskDragEnd);
             return div;
         }
+        // Adds a new task to a specific column.
         function addTaskToColumn(cId, text) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === cId) : null; if (c) { c.tasks.push({ id: `task-${appState.nextTaskId++}`, text, color: DEFAULT_TASK_COLOR, subTasks: [], isStarred: false, createdAt: Date.now() }); renderBoard(); } }
+        // Deletes a task by its ID.
         function deleteTask(cId, tId) { const b = getCurrentBoard(); const c = b ? b.columns.find(col => col.id === cId) : null; if (c) { c.tasks = c.tasks.filter(t => t.id !== tId); renderBoard(); } }
+        // Updates the color of a task.
         function updateTaskColor(cId, tId, color) { const t = getTaskById(cId, tId); if (t) { t.color = color; renderBoard(); } }
+        // Toggles the starred status of a task.
         function toggleStarTask(cId, tId) { const t = getTaskById(cId, tId); if (t) { t.isStarred = !t.isStarred; renderBoard(); } }
+        // Duplicates an existing task.
         function duplicateTask(columnId, taskId) {
             const board = getCurrentBoard(); if (!board) return; const column = board.columns.find(col => col.id === columnId); if (!column) return;
             const taskIndex = column.tasks.findIndex(t => t.id === taskId); if (taskIndex === -1) return;
             const originalTask = column.tasks[taskIndex];
-            const newTask = { id: `task-${appState.nextTaskId++}`, text: `${originalTask.text}`, color: originalTask.color, isStarred: originalTask.isStarred, createdAt: Date.now(), subTasks: originalTask.subTasks.map(st => ({ id: `subtask-${appState.nextSubTaskId++}`, text: st.text, completed: st.completed })) };
+            const newTask = { id: `task-${appState.nextTaskId++}`, text: `${originalTask.text}`, color: originalTask.color, isStarred: originalTask.isStarred, createdAt: Date.now(), subTasks: originalTask.subTasks.map(st => ({ id: `subtask-${appState.nextSubTaskId++}`, text: st.text, completed: st.completed })) }; // Deep copy sub-tasks.
             column.tasks.splice(taskIndex + 1, 0, newTask); renderBoard();
         }
 
         // --- Sub-task Management ---
+        // Toggles the visibility of the sub-task form and list within a task.
         function toggleSubtaskVisibility(cId, tId) { const el = document.querySelector(`.task-item[data-task-id="${tId}"]`); if (!el) return; const f = el.querySelector('.add-subtask-form'); const l = el.querySelector('.subtask-list-container'); if (!f || !l) return; const hidden = f.style.display === 'none'; f.style.display = hidden ? 'flex' : 'none'; l.style.display = hidden || l.children.length > 0 ? 'flex' : 'none'; if(hidden && f.querySelector('input')) f.querySelector('input').focus(); }
+        // Creates a sub-task DOM element.
         function createSubTaskElement(stData, tId, cId, pColor) {
              const item = document.createElement('div'); item.className = 'subtask-item'; item.dataset.subtaskId = stData.id;
-             const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = stData.completed; chk.addEventListener('change', () => toggleSubTaskComplete(cId, tId, stData.id)); chk.addEventListener('mousedown', e => e.stopPropagation());
-             const span = document.createElement('span'); span.textContent = stData.text; if (stData.completed) span.classList.add('completed'); span.style.color = getContrastingTextColor(pColor);
-             const controls = document.createElement('div'); controls.className = 'subtask-controls'; controls.addEventListener('mousedown', e => e.stopPropagation());
-             const duplicateBtn = document.createElement('button'); duplicateBtn.className = 'subtask-btn'; duplicateBtn.innerHTML = '<i class="fas fa-copy"></i>'; duplicateBtn.title = "Duplicate sub-task"; duplicateBtn.addEventListener('click', () => duplicateSubTask(cId, tId, stData.id));
-             const deleteBtn = document.createElement('button'); deleteBtn.className = 'subtask-btn delete'; deleteBtn.innerHTML = '<i class="fas fa-times"></i>'; deleteBtn.title = "Delete sub-task"; deleteBtn.addEventListener('click', () => deleteSubTask(cId, tId, stData.id));
+             const chk = document.createElement('input'); chk.type = 'checkbox'; chk.checked = stData.completed; chk.addEventListener('change', () => toggleSubTaskComplete(cId, tId, stData.id)); chk.addEventListener('mousedown', e => e.stopPropagation()); // Prevent task drag.
+             const span = document.createElement('span'); span.textContent = stData.text; if (stData.completed) span.classList.add('completed'); span.style.color = getContrastingTextColor(pColor); // Sub-task text with contrast.
+             const controls = document.createElement('div'); controls.className = 'subtask-controls'; controls.addEventListener('mousedown', e => e.stopPropagation()); // Prevent task drag.
+             const duplicateBtn = document.createElement('button'); duplicateBtn.className = 'subtask-btn'; duplicateBtn.innerHTML = '<i class="fas fa-copy"></i>'; duplicateBtn.title = "Duplicate sub-task"; duplicateBtn.addEventListener('click', () => duplicateSubTask(cId, tId, stData.id)); // Duplicate button.
+             const deleteBtn = document.createElement('button'); deleteBtn.className = 'subtask-btn delete'; deleteBtn.innerHTML = '<i class="fas fa-times"></i>'; deleteBtn.title = "Delete sub-task"; deleteBtn.addEventListener('click', () => deleteSubTask(cId, tId, stData.id)); // Delete button.
              controls.appendChild(duplicateBtn); controls.appendChild(deleteBtn);
              item.appendChild(chk); item.appendChild(span); item.appendChild(controls);
              return item;
         }
+        // Adds a new sub-task to a specific task.
         function addSubTask(cId, tId, text) { const t = getTaskById(cId, tId); if (!t) return; if (!t.subTasks) t.subTasks = []; t.subTasks.push({ id: `subtask-${appState.nextSubTaskId++}`, text, completed: false }); renderBoard(); }
+        // Toggles the completion status of a sub-task.
         function toggleSubTaskComplete(cId, tId, stId) { const t = getTaskById(cId, tId); const st = t ? t.subTasks.find(s => s.id === stId) : null; if (st) { st.completed = !st.completed; renderBoard(); } }
+        // Deletes a sub-task by its ID.
         function deleteSubTask(cId, tId, stId) { const t = getTaskById(cId, tId); if (t) { t.subTasks = t.subTasks.filter(s => s.id !== stId); renderBoard(); } }
+        // Duplicates an existing sub-task.
         function duplicateSubTask(columnId, taskId, subTaskId) {
             const task = getTaskById(columnId, taskId); if (!task || !task.subTasks) return;
             const subTaskIndex = task.subTasks.findIndex(st => st.id === subTaskId); if (subTaskIndex === -1) return;
@@ -406,8 +521,11 @@
         }
 
         // --- Context Menu Management ---
+        // Hides all currently displayed context menus.
         function hideAllMenus() { taskColorContextMenu.style.display = 'none'; columnContextMenu.style.display = 'none'; }
+        // Positions a context menu near the mouse click, ensuring it stays within bounds.
         function positionMenu(menuEl, x, y) { const rect = menuEl.getBoundingClientRect(); x = Math.min(x, window.innerWidth - rect.width - 5); y = Math.min(y, window.innerHeight - rect.height - 5); menuEl.style.left = `${x}px`; menuEl.style.top = `${y}px`; menuEl.style.display = 'flex'; }
+        // Populates and shows the context menu for a task.
         function populateAndShowContextMenu(x, y, tData) {
             taskColorContextMenu.innerHTML = ''; const { columnId, taskId } = currentContextMenuTask;
             const items = [ { text: 'Sub-tasks', icon: 'fa-tasks', action: () => toggleSubtaskVisibility(columnId, taskId) }, { text: 'Duplicate Card', icon: 'fa-copy', action: () => duplicateTask(columnId, taskId) }, { text: 'Delete Card', icon: 'fa-trash-alt', action: () => deleteTask(columnId, taskId), isDelete: true } ];
@@ -416,58 +534,166 @@
             PRESET_COLORS.forEach(c => { const d = document.createElement('div'); d.className = 'menu-item'; const s = document.createElement('div'); s.className = 'context-menu-color-swatch'; s.style.backgroundColor = c.value; d.innerHTML = `<span>${c.name}</span>`; if (c.value === tData.color) d.style.fontWeight = 'bold'; d.prepend(s); d.addEventListener('click', () => { updateTaskColor(columnId, taskId, c.value); hideAllMenus(); }); taskColorContextMenu.appendChild(d); });
             positionMenu(taskColorContextMenu, x, y);
         }
+       // Populates and shows the context menu for a column.
        function showColumnContextMenu(btnEl, cId) {
             hideAllMenus(); currentContextMenuColumn.columnId = cId; columnContextMenu.innerHTML = '';
             const items = [ { text: 'Rename List', icon: 'fa-edit', action: () => { const t = document.querySelector(`.column[data-column-id="${cId}"] .column-title`); if (t) makeTitleEditable(t, cId); } }, { text: 'Change Color', icon: 'fa-palette', submenu: COLUMN_COLORS }, { text: 'Sort by Name', icon: 'fa-sort-alpha-down', action: () => sortColumn(cId, 'name-az') }, { text: 'Sort by Date', icon: 'fa-sort-numeric-down', action: () => sortColumn(cId, 'date-new') }, { text: 'Clear Completed', icon: 'fa-broom', action: () => clearCompleted(cId) }, { text: 'Delete List', icon: 'fa-trash-alt', action: () => confirmDeleteColumn(cId), isDelete: true } ];
             items.forEach((i, idx) => {
                 if (idx === 1 || idx === 5) columnContextMenu.appendChild(document.createElement('hr')).className = 'menu-divider';
                 const d = document.createElement('div'); d.className = `menu-item ${i.isDelete ? 'delete' : ''} ${i.submenu ? 'submenu' : ''}`; d.innerHTML = `<i class="fas ${i.icon}"></i><span>${i.text}</span>`;
-                if (i.submenu) { const sub = document.createElement('div'); sub.className = 'menu-base submenu-content'; i.submenu.forEach(col => { const subItem = document.createElement('div'); subItem.className = 'menu-item'; const s = document.createElement('div'); s.className = 'context-menu-color-swatch'; s.style.backgroundColor = col.value; subItem.innerHTML = `<span>${col.name}</span>`; subItem.prepend(s); subItem.addEventListener('click', e => { e.stopPropagation(); updateColumnColor(cId, col.value); hideAllMenus(); }); sub.appendChild(subItem); }); d.appendChild(sub); }
-                else { d.addEventListener('click', () => { i.action(); hideAllMenus(); }); }
+                if (i.submenu) { // Handle submenus (for column colors).
+                    const sub = document.createElement('div'); sub.className = 'menu-base submenu-content';
+                    i.submenu.forEach(col => { const subItem = document.createElement('div'); subItem.className = 'menu-item'; const s = document.createElement('div'); s.className = 'context-menu-color-swatch'; s.style.backgroundColor = col.value; subItem.innerHTML = `<span>${col.name}</span>`; subItem.prepend(s); subItem.addEventListener('click', e => { e.stopPropagation(); updateColumnColor(cId, col.value); hideAllMenus(); }); sub.appendChild(subItem); });
+                    d.appendChild(sub);
+                } else { d.addEventListener('click', () => { i.action(); hideAllMenus(); }); }
                 columnContextMenu.appendChild(d);
             });
-            const rect = btnEl.getBoundingClientRect(); positionMenu(columnContextMenu, rect.left, rect.bottom + 5);
+            const rect = btnEl.getBoundingClientRect(); positionMenu(columnContextMenu, rect.left, rect.bottom + 5); // Position below the menu button.
         }
 
         // --- Drag and Drop ---
+
+        // --- Task Drag and Drop ---
+        // Handles the start of a task drag operation.
         function handleTaskDragStart(e) {
             const t = e.target.closest('.task-item');
-            // Prevent drag if clicking on interactive elements like buttons, inputs, or subtask controls
-            if (!t || e.target.closest('input, button, .subtask-controls, .star-btn')) {
+            // Prevent drag if clicking on interactive elements or if a column drag is in progress.
+            if (!t || e.target.closest('input, button, .subtask-controls, .star-btn') || draggedColumn) {
                 e.preventDefault();
                 return;
             }
-            draggedTask = t;
-            sourceColumnId = t.dataset.columnId;
-            e.dataTransfer.setData('text/plain', t.dataset.taskId);
+            draggedTask = t; // Set the dragged task.
+            sourceColumnId = t.dataset.columnId; // Remember where it came from.
+            e.dataTransfer.setData('text/plain', t.dataset.taskId); // Set data.
             e.dataTransfer.effectAllowed = 'move';
-            setTimeout(() => t.classList.add('dragging'), 0);
+            setTimeout(() => t.classList.add('dragging'), 0); // Apply 'dragging' style.
         }
+        // Handles the end of a task drag operation (cleanup).
         function handleTaskDragEnd() { if (draggedTask) draggedTask.classList.remove('dragging'); draggedTask = null; sourceColumnId = null; document.querySelectorAll('.column.drag-over').forEach(c => c.classList.remove('drag-over')); }
-        function handleDragOver(e) { e.preventDefault(); if (draggedTask) e.dataTransfer.dropEffect = 'move'; }
+        // Allows a drop by preventing the default behavior (Task specific).
+        function handleTaskDragOver(e) {
+            // Only allow drop if a task is being dragged, not a column
+            if (draggedTask) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+            }
+        }
+        // Adds a visual indicator when a task is dragged over a column.
         function handleTaskDragEnterColumn(e) { const col = e.target.closest('.column'); if (draggedTask && col) col.classList.add('drag-over'); }
+        // Removes the visual indicator when a task is dragged out of a column.
         function handleTaskDragLeaveColumn(e) { const col = e.target.closest('.column'); if (draggedTask && col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');}
+        // Handles dropping a task into a column.
         function handleTaskDrop(e, tColId) {
-            e.preventDefault(); const tColEl = e.target.closest('.column'); if (tColEl) tColEl.classList.remove('drag-over');
+            e.preventDefault();
+            // Only handle drop if it's a task being dragged
             if (!draggedTask || !sourceColumnId) return;
-            const b = getCurrentBoard(); if (!b) return; const tId = draggedTask.dataset.taskId; const sCol = b.columns.find(c => c.id === sourceColumnId); const sIdx = sCol ? sCol.tasks.findIndex(t => t.id === tId) : -1; if (sIdx === -1) return;
-            const [tData] = sCol.tasks.splice(sIdx, 1); const tCol = b.columns.find(c => c.id === tColId); if (!tCol) { sCol.tasks.splice(sIdx, 0, tData); renderBoard(); return; }
+
+            const tColEl = e.target.closest('.column'); if (tColEl) tColEl.classList.remove('drag-over');
+
+            const b = getCurrentBoard(); if (!b) return; const tId = draggedTask.dataset.taskId; const sCol = b.columns.find(c => c.id === sourceColumnId); const sIdx = sCol ? sCol.tasks.findIndex(t => t.id === tId) : -1; if (sIdx === -1) return; // Find the task in the source column.
+            const [tData] = sCol.tasks.splice(sIdx, 1); // Remove from source.
+            const tCol = b.columns.find(c => c.id === tColId); if (!tCol) { sCol.tasks.splice(sIdx, 0, tData); renderBoard(); return; } // Find the target column.
+            // Find the position to insert the task based on mouse Y-coordinate.
             const tList = tColEl.querySelector('.task-list'); const refNode = Array.from(tList.querySelectorAll('.task-item:not(.dragging)')).find(el => e.clientY < el.getBoundingClientRect().top + el.offsetHeight / 2);
             const refIdx = refNode ? tCol.tasks.findIndex(t => t.id === refNode.dataset.taskId) : -1;
-            if (refIdx !== -1) tCol.tasks.splice(refIdx, 0, tData); else tCol.tasks.push(tData);
-            renderBoard();
+            if (refIdx !== -1) tCol.tasks.splice(refIdx, 0, tData); else tCol.tasks.push(tData); // Insert or append to target.
+            renderBoard(); // Re-render to reflect changes.
         }
-        function handleColumnDragStart(e) { /* Placeholder */ }
-        function handleColumnDragEnd() { /* Placeholder */ }
-        function handleColumnDragOver(e) { /* Placeholder */ }
-        function handleColumnDrop(e) { /* Placeholder */ }
+
+        // --- Column Drag Handlers ---
+        function handleColumnDragStart(e) {
+             // Ensure it's the column itself and it's set to draggable
+             if (e.target.classList.contains('column') && e.target.draggable) {
+                 draggedColumn = e.target;
+                 sourceColumnId = draggedColumn.dataset.columnId;
+                 e.dataTransfer.setData('text/plain', sourceColumnId); // Use 'text/plain' for broad compatibility
+                 e.dataTransfer.effectAllowed = 'move';
+                 setTimeout(() => draggedColumn.classList.add('dragging-col'), 0);
+                 draggedTask = null; // Ensure no task drag conflicts
+             } else {
+                 e.preventDefault(); // Prevent if not the intended drag target
+             }
+        }
+
+        function handleColumnDragEnd() {
+            if (draggedColumn) {
+                draggedColumn.classList.remove('dragging-col');
+                draggedColumn.draggable = false; // Reset draggable state
+            }
+            draggedColumn = null;
+            sourceColumnId = null;
+        }
+
+        // Finds the column element that the dragged column should be placed before.
+        function getDragAfterColumn(container, x) {
+            const draggableColumns = [...container.querySelectorAll('.column:not(.dragging-col)')];
+
+            return draggableColumns.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = x - box.left - box.width / 2; // Find offset from the center
+                // If offset is negative (mouse is left of center) and closer than previous.
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        // Handles dragging a column over the board container.
+        function handleBoardDragOver(e) {
+            e.preventDefault(); // Necessary to allow drop
+            if (!draggedColumn) return; // Only act if a column is being dragged.
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        // Handles dropping a column onto the board container.
+        function handleBoardDrop(e) {
+            e.preventDefault();
+            if (!draggedColumn) return; // Only act if a column was dropped.
+
+            const currentBoard = getCurrentBoard();
+            if (!currentBoard) return;
+
+            const draggedId = draggedColumn.dataset.columnId;
+            const draggedIndex = currentBoard.columns.findIndex(c => c.id === draggedId);
+
+            if (draggedIndex === -1) {
+                console.error("Dragged column not found in state.");
+                handleColumnDragEnd(); // Clean up
+                return;
+            }
+
+            // Find where to drop the column
+            const afterElement = getDragAfterColumn(boardContainer, e.clientX);
+            const [movedColumn] = currentBoard.columns.splice(draggedIndex, 1); // Remove from old position
+
+            if (afterElement == null) {
+                currentBoard.columns.push(movedColumn); // Drop at the end
+            } else {
+                const afterId = afterElement.dataset.columnId;
+                const targetIndex = currentBoard.columns.findIndex(c => c.id === afterId);
+                currentBoard.columns.splice(targetIndex, 0, movedColumn); // Insert at new position
+            }
+
+            handleColumnDragEnd(); // Clean up drag state
+            renderBoard(); // Re-render the board with the new order
+        }
 
         // --- Global Listeners ---
+        // Handles clicks outside menus or sidebar to close them.
         document.addEventListener('click', (e) => { if (!taskColorContextMenu.contains(e.target)) taskColorContextMenu.style.display = 'none'; if (!columnContextMenu.contains(e.target) && !e.target.closest('.column-menu-btn')) columnContextMenu.style.display = 'none'; if (!sidebar.contains(e.target) && !e.target.closest('#openSidebarBtn') && !sidebar.classList.contains('-translate-x-full')) closeSidebar(); });
+        // Handles the Escape key to close menus and sidebar.
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideAllMenus(); closeSidebar(); } });
 
         // --- Initialize ---
-        document.addEventListener('DOMContentLoaded', loadAppState);
+        // Loads the application state when the DOM is fully loaded.
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAppState();
+            // Add listeners for column drag/drop to the main container
+            boardContainer.addEventListener('dragover', handleBoardDragOver);
+            boardContainer.addEventListener('drop', handleBoardDrop);
+        });
 
     </script>
 </body>
