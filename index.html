@@ -20,10 +20,10 @@
         /* --- Performance Note: For production, extract this CSS to a .css file and minify it. --- */
 
         /* --- Global & Dark Mode (Default) --- */
-        body { font-family: 'Inter', sans-serif; background-color: #1f2a44; color: #e2e8f0; overscroll-behavior-x: none; transition: background-color 0.3s, color 0.3s; }
+        body { font-family: 'Inter', sans-serif; background-color: #1a1e27; color: #e2e8f0; overscroll-behavior-x: none; transition: background-color 0.3s, color 0.3s; }
         .board-container { display: flex; overflow-x: auto; padding: 20px; gap: 16px; min-height: calc(100vh - 150px); align-items: flex-start; } /* Main container for columns */
-        .column { background-color: #2d3748; border-radius: 12px; width: 300px; min-width: 200px; max-width: 500px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: calc(100vh - 200px); resize: horizontal; overflow: hidden; position: relative; /* Removed cursor: move; */ transition: background-color 0.2s, opacity 0.2s, transform 0.2s; }
-        .column:hover { overflow: visible; } /* Allow resize handle to show */
+        .column { background-color:     #2d3748; border-radius: 12px; width: 300px; min-width: 200px; max-width: 500px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3); display: flex; flex-direction: column; max-height: calc(100vh - 200px); resize: horizontal; overflow: hidden; position: relative; /* Ensure position relative for absolute children */ transition: background-color 0.2s, opacity 0.2s, transform 0.2s; }
+        .column:hover { overflow: visible; } /* Allow resize handle to show - MIGHT BE NEEDED */
         .column-header { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #4b5563; cursor: grab; position: relative; } /* Make header grabbable */
         .column-title { font-weight: 600; color: #e2e8f0; flex-grow: 1; padding: 4px 0; pointer-events: none; /* Make title non-interactive for clicks to pass through */ }
         .column-title-input { font-weight: 600; color: #e2e8f0; border: none; background-color: #374151; padding: 4px; width: calc(100% - 30px); outline: 2px solid #60a5fa; border-radius: 4px; pointer-events: auto; /* Ensure input is interactive */ } /* Input for editing title */
@@ -195,7 +195,10 @@
         </button>
     </div>
 
-    <div id="taskColorContextMenu" class="menu-base"></div> <div id="columnContextMenu" class="menu-base"></div> <script>
+    <div id="taskColorContextMenu" class="menu-base"></div>
+    <div id="columnContextMenu" class="menu-base"></div>
+
+    <script>
         // --- DOM Selection ---
         // Get references to key HTML elements for easier access.
         const body = document.body;
@@ -222,6 +225,7 @@
         // Variables to track the currently targeted item for context menus.
         let currentContextMenuTask = { columnId: null, taskId: null };
         let currentContextMenuColumn = { columnId: null };
+        let currentOpenColumnElement = null; // <-- ADDED: Track the column with the open menu
 
         // --- Preset Colors ---
         // Define standard colors for tasks and columns.
@@ -298,6 +302,7 @@
 
         // Renders the entire board (columns and tasks) for the current board.
         function renderBoard() {
+            hideAllMenus(); // Hide menus before re-rendering
             boardContainer.innerHTML = ''; // Clear existing board.
             const currentBoard = getCurrentBoard();
             const isLight = body.classList.contains('light-mode');
@@ -351,7 +356,9 @@
 
             const h = document.createElement('div'); h.className = 'column-header';
             const t = document.createElement('span'); t.className = 'column-title'; t.textContent = cData.title;
-            const m = document.createElement('button'); m.className = 'column-menu-btn'; m.innerHTML = '<i class="fas fa-ellipsis-h"></i>'; m.title = "Options"; m.addEventListener('click', e => { e.stopPropagation(); showColumnContextMenu(e.target, cData.id); }); // Column context menu.
+            const m = document.createElement('button'); m.className = 'column-menu-btn'; m.innerHTML = '<i class="fas fa-ellipsis-h"></i>'; m.title = "Options";
+            // *** MODIFIED: Ensure 'e' is passed to showColumnContextMenu ***
+            m.addEventListener('click', e => { e.stopPropagation(); showColumnContextMenu(e.currentTarget, cData.id); }); // Column context menu.
             h.appendChild(t); h.appendChild(m);
 
             // Make the header draggable, except for the menu button.
@@ -519,34 +526,110 @@
         }
 
         // --- Context Menu Management ---
-        // Hides all currently displayed context menus.
-        function hideAllMenus() { taskColorContextMenu.style.display = 'none'; columnContextMenu.style.display = 'none'; }
+        // Hides all currently displayed context menus and resets column styles.
+        function hideAllMenus() {
+            taskColorContextMenu.style.display = 'none';
+            columnContextMenu.style.display = 'none';
+
+            // Reset any previously opened column
+            if (currentOpenColumnElement) {
+                currentOpenColumnElement.style.overflow = 'hidden'; // Set back to hidden
+                currentOpenColumnElement.style.zIndex = '';     // Reset z-index
+                // Ensure menu is moved back to body if needed, or just hidden
+                if (columnContextMenu.parentNode !== body) {
+                    body.appendChild(columnContextMenu);
+                }
+                currentOpenColumnElement = null;
+            }
+             // Ensure task menu is also back in body
+            if (taskColorContextMenu.parentNode !== body) {
+                 body.appendChild(taskColorContextMenu);
+            }
+        }
+
         // Positions a context menu near the mouse click, ensuring it stays within bounds.
-        function positionMenu(menuEl, x, y) { const rect = menuEl.getBoundingClientRect(); x = Math.min(x, window.innerWidth - rect.width - 5); y = Math.min(y, window.innerHeight - rect.height - 5); menuEl.style.left = `${x}px`; menuEl.style.top = `${y}px`; menuEl.style.display = 'flex'; }
+        function positionMenu(menuEl, x, y) {
+            // This function is now mainly for the task menu (body-relative)
+            const scrollX = window.scrollX || window.pageXOffset;
+            const scrollY = window.scrollY || window.pageYOffset;
+            let finalX = x + scrollX;
+            let finalY = y + scrollY;
+
+            menuEl.style.display = 'flex'; // Display first to get accurate rect
+            const rect = menuEl.getBoundingClientRect();
+
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            // Adjust X if it goes off-screen right
+            if ((x + rect.width + 5) > viewportWidth) {
+                 finalX = (x + scrollX) - rect.width;
+            }
+            // Adjust Y if it goes off-screen bottom
+            if ((y + rect.height + 5) > viewportHeight) {
+                finalY = (y + scrollY) - rect.height;
+            }
+
+            // Ensure it doesn't go off-screen left/top
+            finalX = Math.max(scrollX + 5, finalX);
+            finalY = Math.max(scrollY + 5, finalY);
+
+            menuEl.style.left = `${finalX}px`;
+            menuEl.style.top = `${finalY}px`;
+        }
+
         // Populates and shows the context menu for a task.
         function populateAndShowContextMenu(x, y, tData) {
+            hideAllMenus(); // Hide any other menus first
             taskColorContextMenu.innerHTML = ''; const { columnId, taskId } = currentContextMenuTask;
+            // Ensure task menu is in body before positioning
+            if (taskColorContextMenu.parentNode !== body) {
+                body.appendChild(taskColorContextMenu);
+            }
             const items = [ { text: 'Sub-tasks', icon: 'fa-tasks', action: () => toggleSubtaskVisibility(columnId, taskId) }, { text: 'Duplicate Card', icon: 'fa-copy', action: () => duplicateTask(columnId, taskId) }, { text: 'Delete Card', icon: 'fa-trash-alt', action: () => deleteTask(columnId, taskId), isDelete: true } ];
             items.forEach(i => { const d = document.createElement('div'); d.className = `menu-item ${i.isDelete ? 'delete' : ''}`; d.innerHTML = `<i class="fas ${i.icon}"></i><span>${i.text}</span>`; d.addEventListener('click', () => { i.action(); hideAllMenus(); }); taskColorContextMenu.appendChild(d); });
             taskColorContextMenu.appendChild(document.createElement('hr')).className = 'menu-divider';
             PRESET_COLORS.forEach(c => { const d = document.createElement('div'); d.className = 'menu-item'; const s = document.createElement('div'); s.className = 'context-menu-color-swatch'; s.style.backgroundColor = c.value; d.innerHTML = `<span>${c.name}</span>`; if (c.value === tData.color) d.style.fontWeight = 'bold'; d.prepend(s); d.addEventListener('click', () => { updateTaskColor(columnId, taskId, c.value); hideAllMenus(); }); taskColorContextMenu.appendChild(d); });
-            positionMenu(taskColorContextMenu, x, y);
+            positionMenu(taskColorContextMenu, x, y); // Use the (now updated) positionMenu
         }
-       // Populates and shows the context menu for a column.
+
+       // Populates and shows the context menu for a column. (MODIFIED)
        function showColumnContextMenu(btnEl, cId) {
-            hideAllMenus(); currentContextMenuColumn.columnId = cId; columnContextMenu.innerHTML = '';
+            hideAllMenus(); // Hide others and reset previous column first
+            currentContextMenuColumn.columnId = cId;
+            columnContextMenu.innerHTML = ''; // Clear old content
+
+            const columnEl = btnEl.closest('.column'); // Find the parent column element
+            if (!columnEl) return; // Exit if we can't find the column
+
+            // --- Style the Column and Move the Menu ---
+            columnEl.style.position = 'relative';  // Make it the positioning context
+            columnEl.style.overflow = 'visible';   // Allow menu to show outside bounds
+            columnEl.style.zIndex = '20';          // Bring it above other columns
+            currentOpenColumnElement = columnEl;   // Remember which column is open
+            columnEl.appendChild(columnContextMenu); // MOVE the menu inside the column!
+
+            // --- Populate Menu Items ---
             const items = [ { text: 'Rename List', icon: 'fa-edit', action: () => { const t = document.querySelector(`.column[data-column-id="${cId}"] .column-title`); if (t) makeTitleEditable(t, cId); } }, { text: 'Change Color', icon: 'fa-palette', submenu: COLUMN_COLORS }, { text: 'Sort by Name', icon: 'fa-sort-alpha-down', action: () => sortColumn(cId, 'name-az') }, { text: 'Sort by Date', icon: 'fa-sort-numeric-down', action: () => sortColumn(cId, 'date-new') }, { text: 'Clear Completed', icon: 'fa-broom', action: () => clearCompleted(cId) }, { text: 'Delete List', icon: 'fa-trash-alt', action: () => confirmDeleteColumn(cId), isDelete: true } ];
             items.forEach((i, idx) => {
                 if (idx === 1 || idx === 5) columnContextMenu.appendChild(document.createElement('hr')).className = 'menu-divider';
                 const d = document.createElement('div'); d.className = `menu-item ${i.isDelete ? 'delete' : ''} ${i.submenu ? 'submenu' : ''}`; d.innerHTML = `<i class="fas ${i.icon}"></i><span>${i.text}</span>`;
-                if (i.submenu) { // Handle submenus (for column colors).
+                if (i.submenu) {
                     const sub = document.createElement('div'); sub.className = 'menu-base submenu-content';
                     i.submenu.forEach(col => { const subItem = document.createElement('div'); subItem.className = 'menu-item'; const s = document.createElement('div'); s.className = 'context-menu-color-swatch'; s.style.backgroundColor = col.value; subItem.innerHTML = `<span>${col.name}</span>`; subItem.prepend(s); subItem.addEventListener('click', e => { e.stopPropagation(); updateColumnColor(cId, col.value); hideAllMenus(); }); sub.appendChild(subItem); });
                     d.appendChild(sub);
                 } else { d.addEventListener('click', () => { i.action(); hideAllMenus(); }); }
                 columnContextMenu.appendChild(d);
             });
-            const rect = btnEl.getBoundingClientRect(); positionMenu(columnContextMenu, rect.left, rect.bottom + 5); // Position below the menu button.
+
+            // --- Calculate Position Relative to Column ---
+            const menuX = btnEl.offsetLeft; // X relative to column
+            const menuY = btnEl.offsetTop + btnEl.offsetHeight + 5; // Y relative to column (below button)
+
+            // --- Position and Show ---
+            columnContextMenu.style.left = `${menuX}px`;
+            columnContextMenu.style.top = `${menuY}px`;
+            columnContextMenu.style.display = 'flex';
         }
 
         // --- Drag and Drop ---
@@ -679,8 +762,20 @@
         }
 
         // --- Global Listeners ---
-        // Handles clicks outside menus or sidebar to close them.
-        document.addEventListener('click', (e) => { if (!taskColorContextMenu.contains(e.target)) taskColorContextMenu.style.display = 'none'; if (!columnContextMenu.contains(e.target) && !e.target.closest('.column-menu-btn')) columnContextMenu.style.display = 'none'; if (!sidebar.contains(e.target) && !e.target.closest('#openSidebarBtn') && !sidebar.classList.contains('-translate-x-full')) closeSidebar(); });
+        // Handles clicks outside menus or sidebar to close them. (MODIFIED)
+        document.addEventListener('click', (e) => {
+            if (!taskColorContextMenu.contains(e.target)) {
+                 taskColorContextMenu.style.display = 'none';
+            }
+            // If the click is NOT inside the column menu AND NOT the 3-dot button (or its icon)
+            if (!columnContextMenu.contains(e.target) && !e.target.closest('.column-menu-btn')) {
+                 hideAllMenus(); // Use hideAllMenus to ensure column styles are reset
+            }
+            if (!sidebar.contains(e.target) && !e.target.closest('#openSidebarBtn') && !sidebar.classList.contains('-translate-x-full')) {
+                closeSidebar();
+            }
+        });
+
         // Handles the Escape key to close menus and sidebar.
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { hideAllMenus(); closeSidebar(); } });
 
@@ -691,6 +786,9 @@
             // Add listeners for column drag/drop to the main container
             boardContainer.addEventListener('dragover', handleBoardDragOver);
             boardContainer.addEventListener('drop', handleBoardDrop);
+            // Ensure menus are in the body initially
+            body.appendChild(taskColorContextMenu);
+            body.appendChild(columnContextMenu);
         });
 
     </script>
