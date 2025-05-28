@@ -513,7 +513,7 @@
         // Adds a new sub-task to a specific task.
         function addSubTask(cId, tId, text) { const t = getTaskById(cId, tId); if (!t) return; if (!t.subTasks) t.subTasks = []; t.subTasks.push({ id: `subtask-${appState.nextSubTaskId++}`, text, completed: false }); renderBoard(); }
         // Toggles the completion status of a sub-task.
-        function toggleSubTaskComplete(cId, tId, stId) { const t = getTaskById(cId, tId); const st = t ? t.subTasks.find(s => s.id === stId) : null; if (st) { st.completed = !st.completed; renderBoard(); } }
+        function toggleSubTaskComplete(cId, tId, stId) { const t = getTaskById(cId, tId); const st = t ? t.subTasks.find(s => s.id === stId) : null; if (st) { st.completed = !st.completed;  } }
         // Deletes a sub-task by its ID.
         function deleteSubTask(cId, tId, stId) { const t = getTaskById(cId, tId); if (t) { t.subTasks = t.subTasks.filter(s => s.id !== stId); renderBoard(); } }
         // Duplicates an existing sub-task.
