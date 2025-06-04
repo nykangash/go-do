@@ -1,2 +1,2 @@
 # go-do
-To-do list/Kanban
+To-do list/Kanban <b>LOCAL</b>
