@@ -50,7 +50,7 @@
             },
             {
                 name: 'Red',
-                value: '#EF4444'
+                value: '#c24226'
             },
             {
                 name: 'Amber',
@@ -465,12 +465,12 @@ completedTasksBtn.addEventListener('click', () => alert('Completed tasks archive
             div.addEventListener('dragend', handleColumnDragEnd);
 
             const l = document.createElement('div');
-            l.className = 'task-list'; // Task container.
+            l.className = 'task-list'; // Task container.            
             // Task drag-and-drop listeners.
-            l.addEventListener('dragover', handleTaskDragOver);
+            l.addEventListener('dragover', handleTaskDragOver); 
             l.addEventListener('drop', e => handleTaskDrop(e, cData.id));
             l.addEventListener('dragenter', handleTaskDragEnterColumn);
-            l.addEventListener('dragleave', handleTaskDragLeaveColumn);
+            l.addEventListener('dragleave', handleTaskDragLeaveColumn);	
 
             const taskFragment = document.createDocumentFragment(); // Fragment for tasks.
             cData.tasks.forEach(tData => taskFragment.appendChild(createTaskElement(tData, cData.id)));
@@ -602,7 +602,7 @@ completedTasksBtn.addEventListener('click', () => alert('Completed tasks archive
 
         // --- Task Management ---
         // Creates a task (card) DOM element from task data.
-        function createTaskElement(tData, cId) {
+        function createTaskElement(tData, cId) {            
             const div = document.createElement('div');
             div.className = 'task-item';
             div.dataset.taskId = tData.id;
@@ -1042,7 +1042,7 @@ completedTasksBtn.addEventListener('click', () => alert('Completed tasks archive
 
         // --- Task Drag and Drop ---
         // Handles the start of a task drag operation.
-        function handleTaskDragStart(e) {
+        function handleTaskDragStart(e) { 
             const t = e.target.closest('.task-item');
             // Prevent drag if clicking on interactive elements or if a column drag is in progress.
             if (!t || e.target.closest('input, button, .subtask-controls, .star-btn') || draggedColumn) {
@@ -1122,7 +1122,7 @@ completedTasksBtn.addEventListener('click', () => alert('Completed tasks archive
                 setTimeout(() => draggedColumn.classList.add('dragging-col'), 0);
                 draggedTask = null; // Ensure no task drag conflicts
             } else {
-                e.preventDefault(); // Prevent if not the intended drag target
+                // e.preventDefault(); // Prevent if not the intended drag target
             }
         }
 
