@@ -75,7 +75,7 @@
             {
                 name: 'Default',
                 value: '#2d3748',
-                light: '#e5e7eb'
+                light: '#e5e7ceb'
             },
             {
                 name: 'Deep Blue',
@@ -281,6 +281,7 @@ function applyTheme(theme) {
     themeToggleBtn.classList.toggle('dark', theme !== 'light');
     themeToggleIndicator.style.transform = theme === 'light' ? 'translateX(0.15rem)' : 'translateX(1.6rem)'; // Adjusted for better visual centering
     appState.theme = theme;
+    renderBoard()
 }
 // Toggles between light and dark themes.
 function toggleTheme() {
