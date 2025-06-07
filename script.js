@@ -94,7 +94,7 @@
             },
             {
                 name: 'Warm Red',
-                value: '#991b1b',
+                value: '#c24226',
                 light: '#fee2e2'
             },
             {
